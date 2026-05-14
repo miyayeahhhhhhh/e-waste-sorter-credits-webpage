@@ -1,0 +1,3592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoBin — Smart E-Waste Recycling</title>
+
+<!-- External Dependencies -->
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Syne:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+/* ============================================================
+   CSS VARIABLES & RESET
+   ============================================================ */
+:root {
+  --bg-primary: #050d0a;
+  --bg-secondary: #081510;
+  --bg-card: rgba(0, 255, 120, 0.04);
+  --bg-card-hover: rgba(0, 255, 120, 0.08);
+  --neon-green: #00ff78;
+  --neon-green-dim: #00c45e;
+  --neon-cyan: #00ffe7;
+  --neon-yellow: #d4ff00;
+  --text-primary: #e8fff2;
+  --text-secondary: #7ab896;
+  --text-muted: #3d6b52;
+  --border: rgba(0, 255, 120, 0.15);
+  --border-bright: rgba(0, 255, 120, 0.4);
+  --glass: rgba(0, 20, 10, 0.8);
+  --gold: #ffd700;
+  --silver: #c0c0c0;
+  --bronze: #cd7f32;
+  --danger: #ff4444;
+  --warning: #ffaa00;
+  --shadow-neon: 0 0 20px rgba(0, 255, 120, 0.3);
+  --shadow-neon-strong: 0 0 40px rgba(0, 255, 120, 0.5);
+  --radius: 12px;
+  --radius-lg: 20px;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Light mode variables */
+body.light-mode {
+  --bg-primary: #f0faf5;
+  --bg-secondary: #e0f5ea;
+  --bg-card: rgba(0, 180, 80, 0.06);
+  --bg-card-hover: rgba(0, 180, 80, 0.12);
+  --neon-green: #00a848;
+  --neon-green-dim: #007a35;
+  --neon-cyan: #0099aa;
+  --text-primary: #0a2e1a;
+  --text-secondary: #1a6640;
+  --text-muted: #4a8a60;
+  --border: rgba(0, 150, 60, 0.2);
+  --border-bright: rgba(0, 150, 60, 0.5);
+  --glass: rgba(240, 250, 245, 0.9);
+  --shadow-neon: 0 0 20px rgba(0, 180, 80, 0.2);
+  --shadow-neon-strong: 0 0 40px rgba(0, 180, 80, 0.35);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  min-height: 100vh;
+  transition: background 0.4s, color 0.4s;
+}
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-secondary); }
+::-webkit-scrollbar-thumb { background: var(--neon-green-dim); border-radius: 3px; }
+
+/* ============================================================
+   PARTICLES CANVAS (background)
+   ============================================================ */
+#particles-canvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+/* ============================================================
+   UTILITY CLASSES
+   ============================================================ */
+.hidden { display: none !important; }
+.page { display: none; min-height: 100vh; position: relative; z-index: 1; }
+.page.active { display: block; }
+
+.glass-card {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: var(--transition);
+}
+.glass-card:hover {
+  border-color: var(--border-bright);
+  box-shadow: var(--shadow-neon);
+}
+
+.neon-text {
+  color: var(--neon-green);
+  text-shadow: 0 0 10px var(--neon-green), 0 0 20px var(--neon-green);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  border-radius: 50px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: none;
+  transition: var(--transition);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
+  color: #050d0a;
+  box-shadow: 0 4px 20px rgba(0, 255, 120, 0.4);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 255, 120, 0.6);
+}
+.btn-outline {
+  background: transparent;
+  color: var(--neon-green);
+  border: 1px solid var(--neon-green);
+}
+.btn-outline:hover {
+  background: rgba(0, 255, 120, 0.1);
+  box-shadow: var(--shadow-neon);
+}
+.btn-danger {
+  background: rgba(255, 68, 68, 0.15);
+  color: var(--danger);
+  border: 1px solid rgba(255, 68, 68, 0.3);
+}
+.btn-danger:hover { background: rgba(255, 68, 68, 0.25); }
+.btn-sm { padding: 8px 18px; font-size: 0.82rem; }
+.btn-lg { padding: 16px 40px; font-size: 1rem; }
+
+.section-title {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+.section-subtitle {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin-bottom: 2rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: 'Space Mono', monospace;
+}
+.badge-green { background: rgba(0,255,120,0.15); color: var(--neon-green); border: 1px solid rgba(0,255,120,0.3); }
+.badge-gold { background: rgba(255,215,0,0.15); color: var(--gold); border: 1px solid rgba(255,215,0,0.3); }
+.badge-cyan { background: rgba(0,255,231,0.15); color: var(--neon-cyan); border: 1px solid rgba(0,255,231,0.3); }
+
+/* ============================================================
+   TOP NAVIGATION BAR
+   ============================================================ */
+#topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  height: 64px;
+  background: rgba(5, 13, 10, 0.9);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(20px);
+  transition: background 0.4s;
+}
+body.light-mode #topbar { background: rgba(240, 250, 245, 0.9); }
+
+.topbar-logo {
+  font-family: 'Orbitron', monospace;
+  font-weight: 900;
+  font-size: 1.3rem;
+  color: var(--neon-green);
+  text-shadow: 0 0 10px var(--neon-green);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.topbar-logo .logo-icon {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #050d0a;
+  font-size: 0.9rem;
+}
+
+.topbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.topbar-nav a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.87rem;
+  padding: 6px 14px;
+  border-radius: 8px;
+  transition: var(--transition);
+  font-weight: 600;
+}
+.topbar-nav a:hover, .topbar-nav a.active {
+  color: var(--neon-green);
+  background: rgba(0,255,120,0.08);
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#theme-toggle {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  transition: var(--transition);
+}
+#theme-toggle:hover { color: var(--neon-green); border-color: var(--neon-green); }
+
+#notification-btn {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  transition: var(--transition);
+  position: relative;
+}
+#notification-btn:hover { color: var(--neon-green); border-color: var(--neon-green); }
+.notif-dot {
+  position: absolute;
+  top: 5px; right: 5px;
+  width: 8px; height: 8px;
+  background: var(--neon-green);
+  border-radius: 50%;
+  animation: pulse-dot 1.5s infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.7; }
+}
+
+.user-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
+  display: flex; align-items: center; justify-content: center;
+  color: #050d0a;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: 2px solid var(--border-bright);
+}
+
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  padding: 4px;
+}
+.hamburger span {
+  display: block;
+  width: 22px; height: 2px;
+  background: var(--text-secondary);
+  border-radius: 2px;
+  transition: var(--transition);
+}
+
+/* ============================================================
+   NOTIFICATION PANEL
+   ============================================================ */
+#notif-panel {
+  position: fixed;
+  top: 72px; right: 16px;
+  width: 320px;
+  max-height: 400px;
+  overflow-y: auto;
+  background: var(--glass);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(20px);
+  z-index: 2000;
+  padding: 1rem;
+  display: none;
+  box-shadow: var(--shadow-neon-strong);
+}
+#notif-panel.open { display: block; animation: slideDown 0.3s ease; }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+.notif-header { font-family: 'Orbitron', monospace; font-size: 0.8rem; color: var(--neon-green); margin-bottom: 0.75rem; }
+.notif-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--bg-card);
+  margin-bottom: 8px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+.notif-item .ni-icon { color: var(--neon-green); margin-top: 2px; font-size: 0.9rem; }
+
+/* ============================================================
+   LANDING PAGE
+   ============================================================ */
+#landing-page { padding-top: 64px; }
+
+/* HERO SECTION */
+.hero {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  padding: 4rem 2rem;
+}
+
+.hero-bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,255,120,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,120,0.04) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: grid-drift 20s linear infinite;
+}
+@keyframes grid-drift { 0% { transform: translate(0, 0); } 100% { transform: translate(50px, 50px); } }
+
+.hero-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+}
+
+.hero-text { max-width: 560px; }
+.hero-eyebrow {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--neon-green);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.hero-eyebrow::before {
+  content: '';
+  display: block;
+  width: 30px; height: 1px;
+  background: var(--neon-green);
+  box-shadow: 0 0 8px var(--neon-green);
+}
+
+.hero-title {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(2.2rem, 4.5vw, 3.8rem);
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+  color: var(--text-primary);
+}
+.hero-title .highlight {
+  color: var(--neon-green);
+  text-shadow: 0 0 15px var(--neon-green);
+}
+
+.hero-tagline {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: 2.5rem;
+}
+
+.hero-cta { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 3rem; }
+
+.hero-stats {
+  display: flex;
+  gap: 2rem;
+}
+.hero-stat .stat-value {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--neon-green);
+}
+.hero-stat .stat-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* ANIMATED BIN ILLUSTRATION */
+.hero-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bin-container {
+  position: relative;
+  width: 280px;
+  height: 320px;
+}
+
+.bin-glow-ring {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,255,120,0.2);
+  animation: ring-pulse 3s ease-in-out infinite;
+}
+.bin-glow-ring:nth-child(2) { width: 350px; height: 350px; animation-delay: 1s; }
+.bin-glow-ring:nth-child(3) { width: 400px; height: 400px; animation-delay: 2s; }
+@keyframes ring-pulse {
+  0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.1; transform: translate(-50%, -50%) scale(1.05); }
+}
+
+.bin-svg-wrap {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  animation: bin-float 4s ease-in-out infinite;
+}
+@keyframes bin-float {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+  50% { transform: translate(-50%, -50%) translateY(-15px); }
+}
+
+/* SVG Bin drawn in CSS/SVG */
+.bin-svg {
+  width: 160px;
+  filter: drop-shadow(0 0 20px rgba(0,255,120,0.6));
+}
+
+/* Floating particles around bin */
+.bin-particle {
+  position: absolute;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--neon-green);
+  box-shadow: 0 0 8px var(--neon-green);
+  animation: orbit 6s linear infinite;
+}
+.bin-particle:nth-child(4) { animation-delay: 0s; top: 10%; left: 50%; }
+.bin-particle:nth-child(5) { animation-delay: -2s; width: 4px; height: 4px; background: var(--neon-cyan); box-shadow: 0 0 8px var(--neon-cyan); top: 80%; left: 20%; }
+.bin-particle:nth-child(6) { animation-delay: -4s; width: 5px; height: 5px; background: var(--neon-yellow); box-shadow: 0 0 8px var(--neon-yellow); top: 60%; left: 85%; }
+@keyframes orbit {
+  0% { transform: rotate(0deg) translateX(120px) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(120px) rotate(-360deg); }
+}
+
+/* SECTIONS WRAPPER */
+.section {
+  padding: 5rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.section-full { max-width: 100%; padding: 5rem 2rem; }
+
+/* ABOUT SECTION */
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: center;
+}
+.about-text h2 { margin-bottom: 1rem; }
+.about-text p { color: var(--text-secondary); line-height: 1.8; margin-bottom: 1rem; }
+.about-text ul { list-style: none; }
+.about-text ul li {
+  display: flex; align-items: center; gap: 10px;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+}
+.about-text ul li i { color: var(--neon-green); }
+
+/* HOW IT WORKS */
+.how-it-works-bg {
+  background: linear-gradient(180deg, transparent, rgba(0,255,120,0.02), transparent);
+  padding: 5rem 2rem;
+}
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.step-card {
+  padding: 2rem;
+  text-align: center;
+  position: relative;
+}
+.step-number {
+  font-family: 'Orbitron', monospace;
+  font-size: 3rem;
+  font-weight: 900;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(0,255,120,0.3);
+  margin-bottom: 1rem;
+  line-height: 1;
+}
+.step-icon {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(0,255,120,0.15), rgba(0,255,231,0.1));
+  border: 1px solid var(--border-bright);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--neon-green);
+  font-size: 1.3rem;
+  margin: 0 auto 1rem;
+}
+.step-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+.step-desc { color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6; }
+
+/* FEATURES */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+.feature-card { padding: 2rem; cursor: default; }
+.feature-card:hover { transform: translateY(-4px); }
+.feature-icon {
+  width: 52px; height: 52px;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(0,255,120,0.15), rgba(0,255,231,0.08));
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--neon-green);
+  font-size: 1.3rem;
+  margin-bottom: 1.2rem;
+}
+.feature-card h3 {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  margin-bottom: 0.6rem;
+  font-weight: 600;
+}
+.feature-card p { color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6; }
+
+/* IMPACT COUNTER */
+.impact-bg {
+  background: linear-gradient(135deg, rgba(0,255,120,0.05), rgba(0,255,231,0.03));
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 5rem 2rem;
+}
+.impact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+  text-align: center;
+}
+.impact-item .impact-value {
+  font-family: 'Orbitron', monospace;
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--neon-green);
+  text-shadow: 0 0 20px var(--neon-green);
+  line-height: 1;
+  margin-bottom: 0.4rem;
+}
+.impact-item .impact-label { color: var(--text-secondary); font-size: 0.9rem; }
+.impact-item .impact-unit { color: var(--text-muted); font-size: 0.75rem; }
+
+/* FOOTER */
+footer {
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  padding: 3rem 2rem;
+}
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 3rem;
+}
+.footer-brand p { color: var(--text-secondary); font-size: 0.88rem; line-height: 1.7; margin-top: 0.75rem; }
+.footer-col h4 {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.75rem;
+  color: var(--neon-green);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+}
+.footer-col ul { list-style: none; }
+.footer-col ul li { margin-bottom: 0.5rem; }
+.footer-col ul li a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.88rem;
+  transition: var(--transition);
+  cursor: pointer;
+}
+.footer-col ul li a:hover { color: var(--neon-green); }
+.footer-bottom {
+  max-width: 1200px;
+  margin: 2rem auto 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   MODALS (Auth)
+   ============================================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  width: 100%;
+  max-width: 480px;
+  padding: 2.5rem;
+  background: var(--glass);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(24px);
+  position: relative;
+  animation: modalSlide 0.3s ease;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+@keyframes modalSlide { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.modal-close {
+  position: absolute;
+  top: 1rem; right: 1rem;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  transition: var(--transition);
+}
+.modal-close:hover { color: var(--danger); border-color: var(--danger); }
+
+.modal-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.4rem;
+}
+.modal-subtitle { color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 1.5rem; }
+
+.form-group { margin-bottom: 1rem; }
+.form-group label {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.form-group input, .form-group select {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(0,255,120,0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-family: 'Syne', sans-serif;
+  font-size: 0.9rem;
+  transition: var(--transition);
+  outline: none;
+}
+.form-group input:focus, .form-group select:focus {
+  border-color: var(--neon-green);
+  box-shadow: 0 0 0 3px rgba(0,255,120,0.1);
+}
+.form-group select option { background: #0a1a10; }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+.form-link {
+  text-align: center;
+  margin-top: 1.2rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.form-link a { color: var(--neon-green); cursor: pointer; text-decoration: none; }
+.form-link a:hover { text-decoration: underline; }
+
+.form-error {
+  color: var(--danger);
+  font-size: 0.82rem;
+  margin-top: 0.75rem;
+  padding: 10px 14px;
+  background: rgba(255,68,68,0.08);
+  border: 1px solid rgba(255,68,68,0.2);
+  border-radius: 8px;
+  display: none;
+}
+.form-error.show { display: block; }
+
+/* ============================================================
+   DASHBOARD PAGE
+   ============================================================ */
+#dashboard-page { padding-top: 64px; display: none; }
+#dashboard-page.active { display: flex; }
+
+.sidebar {
+  width: 240px;
+  min-height: calc(100vh - 64px);
+  background: var(--glass);
+  border-right: 1px solid var(--border);
+  backdrop-filter: blur(16px);
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  position: sticky;
+  top: 64px;
+  height: calc(100vh - 64px);
+  overflow-y: auto;
+}
+
+.sidebar-section-label {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-size: 0.87rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  text-decoration: none;
+}
+.sidebar-item:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+.sidebar-item.active {
+  background: rgba(0,255,120,0.12);
+  color: var(--neon-green);
+  border: 1px solid rgba(0,255,120,0.2);
+}
+.sidebar-item i { width: 18px; text-align: center; font-size: 0.9rem; }
+
+.sidebar-credits {
+  margin-top: auto;
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(0,255,120,0.1), rgba(0,255,231,0.06));
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius);
+}
+.sidebar-credits .sc-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; }
+.sidebar-credits .sc-value {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--neon-green);
+  line-height: 1;
+  margin: 0.2rem 0;
+}
+.sidebar-credits .sc-sub { font-size: 0.75rem; color: var(--text-secondary); }
+
+/* DASHBOARD MAIN */
+.dash-main {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+/* VIEWS inside dashboard */
+.dash-view { display: none; }
+.dash-view.active { display: block; }
+
+/* OVERVIEW */
+.dash-header { margin-bottom: 2rem; }
+.dash-header h1 {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.3rem;
+}
+.dash-header p { color: var(--text-secondary); font-size: 0.9rem; }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.2rem;
+  margin-bottom: 2rem;
+}
+.stat-card {
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 80px; height: 80px;
+  background: radial-gradient(circle, rgba(0,255,120,0.12), transparent 70%);
+  border-radius: 50%;
+}
+.sc-icon {
+  width: 42px; height: 42px;
+  border-radius: 10px;
+  background: rgba(0,255,120,0.1);
+  border: 1px solid rgba(0,255,120,0.2);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--neon-green);
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+.sc-icon.cyan { background: rgba(0,255,231,0.1); border-color: rgba(0,255,231,0.2); color: var(--neon-cyan); }
+.sc-icon.yellow { background: rgba(212,255,0,0.1); border-color: rgba(212,255,0,0.2); color: var(--neon-yellow); }
+.sc-icon.gold { background: rgba(255,215,0,0.1); border-color: rgba(255,215,0,0.2); color: var(--gold); }
+
+.sc-value-main {
+  font-family: 'Orbitron', monospace;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 0.3rem;
+}
+.sc-label-main { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.sc-change { font-size: 0.78rem; color: var(--neon-green); margin-top: 0.4rem; }
+
+/* ARDUINO SIMULATE BUTTON */
+.arduino-btn-wrap {
+  margin-bottom: 2rem;
+}
+.arduino-simulate-btn {
+  width: 100%;
+  padding: 1.2rem 2rem;
+  background: linear-gradient(135deg, rgba(0,255,120,0.15), rgba(0,255,231,0.08));
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  font-family: 'Orbitron', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+.arduino-simulate-btn:hover {
+  background: linear-gradient(135deg, rgba(0,255,120,0.25), rgba(0,255,231,0.15));
+  box-shadow: var(--shadow-neon-strong);
+  transform: translateY(-2px);
+}
+.arduino-simulate-btn::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+  transition: left 0.6s;
+}
+.arduino-simulate-btn:hover::before { left: 100%; }
+.arduino-icon { font-size: 1.3rem; color: var(--neon-green); animation: spin-slow 4s linear infinite; }
+@keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* PROGRESS BAR */
+.level-section { margin-bottom: 2rem; }
+.level-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+.level-title { font-size: 0.85rem; color: var(--text-secondary); }
+.level-badge {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.8rem;
+  padding: 4px 12px;
+  border-radius: 50px;
+  background: linear-gradient(135deg, rgba(0,255,120,0.15), rgba(0,255,231,0.1));
+  border: 1px solid var(--border-bright);
+  color: var(--neon-green);
+}
+.progress-bar-wrap {
+  height: 8px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--neon-green), var(--neon-cyan));
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 10px rgba(0,255,120,0.5);
+}
+.progress-note { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.4rem; }
+
+/* ACTIVITY FEED */
+.activity-section h3 {
+  font-family: 'Orbitron', monospace;
+  font-size: 1rem;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+.activity-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: var(--transition);
+}
+.activity-item:hover { border-color: var(--border-bright); }
+.ai-icon-wrap {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(0,255,120,0.15), rgba(0,255,231,0.08));
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--neon-green);
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+.ai-info { flex: 1; min-width: 0; }
+.ai-type { font-size: 0.88rem; font-weight: 600; color: var(--text-primary); }
+.ai-time { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+.ai-credits {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--neon-green);
+}
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+.empty-state i { font-size: 2.5rem; display: block; margin-bottom: 1rem; color: var(--border-bright); }
+
+/* CHART SECTION */
+.chart-section { margin-bottom: 2rem; }
+.chart-section h3 {
+  font-family: 'Orbitron', monospace;
+  font-size: 1rem;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+.chart-card {
+  padding: 1.5rem;
+  height: 280px;
+}
+
+/* PROFILE VIEW */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+.profile-card-main { padding: 2rem; text-align: center; }
+.profile-avatar-lg {
+  width: 90px; height: 90px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Orbitron', monospace;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #050d0a;
+  margin: 0 auto 1rem;
+  border: 3px solid var(--border-bright);
+  box-shadow: var(--shadow-neon);
+}
+.profile-name { font-family: 'Orbitron', monospace; font-size: 1.1rem; font-weight: 700; margin-bottom: 0.3rem; }
+.profile-prn { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem; }
+.profile-edit { padding: 1.5rem; }
+.profile-edit h3 { font-family: 'Orbitron', monospace; font-size: 1rem; margin-bottom: 1.5rem; font-weight: 600; }
+
+/* ACHIEVEMENTS */
+.achievements-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
+.achievement-card {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  cursor: default;
+}
+.ach-icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+.ach-name { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.3rem; }
+.ach-desc { font-size: 0.75rem; color: var(--text-muted); }
+.achievement-card.locked { opacity: 0.4; filter: grayscale(0.7); }
+
+/* ECO IMPACT */
+.eco-impact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.2rem; }
+.eco-card { padding: 1.5rem; text-align: center; }
+.eco-icon { font-size: 2rem; margin-bottom: 0.75rem; color: var(--neon-green); }
+.eco-value { font-family: 'Orbitron', monospace; font-size: 1.8rem; font-weight: 700; color: var(--neon-green); }
+.eco-label { font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.3rem; }
+
+/* REDEEM */
+.redeem-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; }
+.reward-card { padding: 1.5rem; }
+.reward-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
+.reward-icon { font-size: 1.8rem; }
+.reward-title { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+.reward-brand { font-size: 0.78rem; color: var(--text-muted); }
+.reward-cost { display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; }
+.reward-cost-value { font-family: 'Orbitron', monospace; font-size: 1.3rem; font-weight: 700; color: var(--neon-green); }
+.reward-cost-label { font-size: 0.78rem; color: var(--text-muted); }
+.reward-desc { font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.5; }
+
+/* ============================================================
+   LEADERBOARD PAGE
+   ============================================================ */
+#leaderboard-page { padding-top: 64px; padding: 64px 2rem 2rem; }
+.leaderboard-header { text-align: center; padding: 3rem 0 2rem; }
+.podium { display: flex; align-items: flex-end; justify-content: center; gap: 1rem; margin-bottom: 3rem; }
+.podium-item { text-align: center; }
+.podium-avatar {
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Orbitron', monospace;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #050d0a;
+  margin: 0 auto 0.75rem;
+  position: relative;
+}
+.podium-avatar::after {
+  content: attr(data-rank);
+  position: absolute;
+  top: -8px; right: -8px;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.podium-item.first .podium-avatar { width: 80px; height: 80px; font-size: 1.4rem; background: linear-gradient(135deg, #ffd700, #ffaa00); border: 3px solid #ffd700; box-shadow: 0 0 20px rgba(255,215,0,0.5); }
+.podium-item.second .podium-avatar { background: linear-gradient(135deg, #c0c0c0, #a0a0a0); border: 2px solid #c0c0c0; }
+.podium-item.third .podium-avatar { background: linear-gradient(135deg, #cd7f32, #a0622a); border: 2px solid #cd7f32; }
+.podium-item.first .podium-avatar::after { background: var(--gold); color: #000; content: '🥇'; font-size: 1rem; }
+.podium-item.second .podium-avatar::after { background: var(--silver); color: #000; content: '🥈'; font-size: 1rem; }
+.podium-item.third .podium-avatar::after { background: var(--bronze); color: #000; content: '🥉'; font-size: 1rem; }
+.podium-pedestal {
+  width: 100px; height: 30px;
+  background: rgba(0,255,120,0.08);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Orbitron', monospace;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+.podium-item.first .podium-pedestal { height: 50px; background: rgba(255,215,0,0.08); border-color: rgba(255,215,0,0.2); color: var(--gold); }
+.podium-item.second .podium-pedestal { height: 35px; background: rgba(192,192,192,0.06); }
+.podium-name { font-size: 0.8rem; font-weight: 600; margin-top: 0.5rem; }
+.podium-score { font-family: 'Space Mono', monospace; font-size: 0.72rem; color: var(--neon-green); }
+
+.leaderboard-table { max-width: 800px; margin: 0 auto; }
+.lb-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 0.75rem;
+  background: var(--bg-card);
+  transition: var(--transition);
+}
+.lb-row:hover { border-color: var(--border-bright); transform: translateX(4px); }
+.lb-row.current-user { border-color: var(--neon-green); background: rgba(0,255,120,0.05); }
+.lb-rank {
+  font-family: 'Orbitron', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  width: 36px;
+  text-align: center;
+  color: var(--text-muted);
+}
+.lb-rank.top1 { color: var(--gold); }
+.lb-rank.top2 { color: var(--silver); }
+.lb-rank.top3 { color: var(--bronze); }
+.lb-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #050d0a;
+  flex-shrink: 0;
+}
+.lb-info { flex: 1; }
+.lb-name { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); }
+.lb-prn { font-family: 'Space Mono', monospace; font-size: 0.72rem; color: var(--text-muted); }
+.lb-credits { font-family: 'Orbitron', monospace; font-size: 1rem; font-weight: 700; color: var(--neon-green); }
+.lb-items { font-size: 0.75rem; color: var(--text-muted); text-align: right; }
+
+/* ============================================================
+   ADMIN PANEL
+   ============================================================ */
+#admin-page { padding-top: 64px; padding-bottom: 2rem; }
+.admin-login-wrap {
+  min-height: calc(100vh - 64px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 2rem;
+}
+.admin-login-card { width: 100%; max-width: 420px; padding: 2.5rem; }
+.admin-logo {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.7rem;
+  color: var(--danger);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  margin-bottom: 0.5rem;
+}
+.admin-main { padding: 2rem; }
+.admin-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+.admin-topbar h1 { font-family: 'Orbitron', monospace; font-size: 1.4rem; font-weight: 700; }
+.admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.2rem; margin-bottom: 2rem; }
+.admin-stat { padding: 1.5rem; border-radius: var(--radius); background: var(--bg-card); border: 1px solid var(--border); }
+.admin-stat-value { font-family: 'Orbitron', monospace; font-size: 2rem; font-weight: 700; color: var(--neon-green); }
+.admin-stat-label { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem; }
+
+.admin-users-table { width: 100%; overflow-x: auto; }
+.admin-users-table table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.admin-users-table th {
+  text-align: left;
+  padding: 10px 14px;
+  background: rgba(0,255,120,0.05);
+  border-bottom: 1px solid var(--border);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--neon-green);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.admin-users-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.admin-users-table tr:hover td { background: rgba(0,255,120,0.03); }
+
+.activity-feed { max-height: 300px; overflow-y: auto; }
+.activity-feed-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+.afi-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--neon-green); flex-shrink: 0; }
+
+/* ============================================================
+   ARDUINO SECTION PAGE
+   ============================================================ */
+#arduino-page { padding: 80px 2rem 4rem; }
+.arduino-section { max-width: 1100px; margin: 0 auto; }
+.code-card {
+  padding: 1.5rem;
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+.code-card-label {
+  font-size: 0.72rem;
+  color: var(--neon-green);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-family: 'Space Mono', monospace;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.code-card-label i { font-size: 0.9rem; }
+pre {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.8;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+pre .kw { color: var(--neon-cyan); }
+pre .str { color: var(--neon-yellow); }
+pre .cm { color: var(--text-muted); }
+pre .fn { color: var(--neon-green); }
+pre .num { color: #ff9f43; }
+
+.iot-diagram-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin: 2rem 0; }
+.iot-node {
+  padding: 1.5rem;
+  text-align: center;
+  position: relative;
+}
+.iot-icon { font-size: 2.2rem; margin-bottom: 0.75rem; }
+.iot-label { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.3rem; }
+.iot-desc { font-size: 0.75rem; color: var(--text-muted); line-height: 1.5; }
+
+/* ============================================================
+   SUCCESS POPUP
+   ============================================================ */
+#success-popup {
+  position: fixed;
+  top: 80px; right: 20px;
+  width: 340px;
+  padding: 1.2rem 1.5rem;
+  background: var(--glass);
+  border: 1px solid var(--neon-green);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(20px);
+  z-index: 9000;
+  display: none;
+  box-shadow: var(--shadow-neon-strong);
+  animation: popupIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes popupIn {
+  from { transform: translateX(100px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.popup-inner { display: flex; align-items: flex-start; gap: 12px; }
+.popup-icon {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: rgba(0,255,120,0.15);
+  border: 1px solid var(--neon-green);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem;
+  color: var(--neon-green);
+  flex-shrink: 0;
+  animation: pulse-icon 0.6s ease;
+}
+@keyframes pulse-icon {
+  0% { transform: scale(0); }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+.popup-title { font-family: 'Orbitron', monospace; font-size: 0.88rem; font-weight: 700; color: var(--text-primary); }
+.popup-body { font-size: 0.82rem; color: var(--text-secondary); margin-top: 3px; }
+.popup-credits { font-family: 'Orbitron', monospace; font-size: 1.4rem; font-weight: 700; color: var(--neon-green); margin-top: 6px; }
+
+/* ============================================================
+   QR MODAL
+   ============================================================ */
+.qr-container {
+  width: 200px; height: 200px;
+  margin: 1.5rem auto;
+  background: white;
+  border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem;
+  color: #333;
+  text-align: center;
+  padding: 10px;
+  position: relative;
+  overflow: hidden;
+}
+.qr-pattern {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 2px;
+  width: 100%; height: 100%;
+  padding: 8px;
+}
+.qr-cell {
+  background: #000;
+  border-radius: 2px;
+}
+.qr-cell.w { background: #fff; }
+
+/* ============================================================
+   CERT PREVIEW
+   ============================================================ */
+#cert-preview {
+  background: linear-gradient(135deg, #050d0a, #081510);
+  border: 2px solid var(--neon-green);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  text-align: center;
+  margin: 1rem 0;
+}
+.cert-title { font-family: 'Orbitron', monospace; font-size: 1.5rem; color: var(--neon-green); margin-bottom: 0.5rem; }
+.cert-sub { color: var(--text-muted); font-size: 0.8rem; letter-spacing: 0.2em; margin-bottom: 1.5rem; }
+.cert-name { font-size: 1.8rem; color: var(--text-primary); font-weight: 700; margin-bottom: 0.5rem; }
+.cert-body { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.7; margin-bottom: 1.5rem; }
+.cert-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--text-muted); }
+
+/* ============================================================
+   MOBILE RESPONSIVE
+   ============================================================ */
+@media (max-width: 900px) {
+  .hero-content { grid-template-columns: 1fr; gap: 2rem; }
+  .hero-visual { order: -1; }
+  .bin-container { width: 200px; height: 220px; }
+  .about-grid { grid-template-columns: 1fr; }
+  .footer-inner { grid-template-columns: 1fr; gap: 2rem; }
+  .topbar-nav { display: none; }
+  .hamburger { display: flex; }
+  .profile-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .sidebar { 
+    position: fixed; 
+    left: -100%; 
+    top: 64px; 
+    z-index: 900; 
+    height: calc(100vh - 64px);
+    transition: left 0.3s ease;
+    box-shadow: var(--shadow-neon-strong);
+  }
+  .sidebar.open { left: 0; }
+  .dash-main { padding: 1.25rem; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .podium { gap: 0.5rem; }
+  .podium-item.first .podium-avatar { width: 60px; height: 60px; font-size: 1rem; }
+  #success-popup { width: calc(100vw - 32px); right: 16px; }
+}
+
+@media (max-width: 480px) {
+  .hero-title { font-size: 2rem; }
+  .stats-grid { grid-template-columns: 1fr; }
+  .hero-stats { gap: 1rem; }
+  .form-row { grid-template-columns: 1fr; }
+  .impact-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ============================================================
+   LOADING SPINNER
+   ============================================================ */
+.spinner {
+  display: inline-block;
+  width: 20px; height: 20px;
+  border: 2px solid rgba(0,255,120,0.2);
+  border-top-color: var(--neon-green);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* MOBILE NAV OVERLAY */
+#mobile-nav {
+  display: none;
+  position: fixed;
+  inset: 64px 0 0;
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  z-index: 800;
+  padding: 1.5rem;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+#mobile-nav.open { display: flex; }
+.mobile-nav-item {
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.mobile-nav-item:hover { color: var(--neon-green); background: var(--bg-card); }
+
+/* SHIMMER LOADING */
+.shimmer {
+  background: linear-gradient(90deg, var(--bg-card) 25%, rgba(0,255,120,0.06) 50%, var(--bg-card) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+</style>
+</head>
+<body>
+
+<!-- PARTICLES CANVAS -->
+<canvas id="particles-canvas"></canvas>
+
+<!-- ============================================================
+     TOP NAVIGATION BAR
+     ============================================================ -->
+<nav id="topbar">
+  <div class="topbar-logo" onclick="showPage('landing')">
+    <div class="logo-icon"><i class="fas fa-recycle"></i></div>
+    ECO<span style="color:var(--text-secondary)">BIN</span>
+  </div>
+  <div class="topbar-nav" id="desktop-nav">
+    <a onclick="smoothScrollTo('#about')" style="cursor:pointer;">About</a>
+    <a onclick="smoothScrollTo('#how-it-works')" style="cursor:pointer;">How It Works</a>
+    <a onclick="showPage('leaderboard')" style="cursor:pointer;">Leaderboard</a>
+    <a onclick="showPage('arduino')" style="cursor:pointer;">Arduino</a>
+  </div>
+  <div class="topbar-actions">
+    <button id="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">
+      <i class="fas fa-moon" id="theme-icon"></i>
+    </button>
+    <button id="notification-btn" onclick="toggleNotifications()">
+      <i class="fas fa-bell"></i>
+      <span class="notif-dot" id="notif-dot"></span>
+    </button>
+    <div id="auth-buttons" style="display:flex;gap:8px;">
+      <button class="btn btn-outline btn-sm" onclick="openModal('login')">Login</button>
+      <button class="btn btn-primary btn-sm" onclick="openModal('register')">Register</button>
+    </div>
+    <div id="user-menu" style="display:none;align-items:center;gap:10px;">
+      <div class="user-avatar" id="nav-avatar" onclick="navigateDash('profile')">??</div>
+      <button class="btn btn-outline btn-sm" onclick="logout()">Logout</button>
+    </div>
+    <div class="hamburger" onclick="toggleMobileNav()">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile Nav -->
+<div id="mobile-nav">
+  <div class="mobile-nav-item" onclick="smoothScrollTo('#about');closeMobileNav()">About</div>
+  <div class="mobile-nav-item" onclick="smoothScrollTo('#how-it-works');closeMobileNav()">How It Works</div>
+  <div class="mobile-nav-item" onclick="showPage('leaderboard');closeMobileNav()">Leaderboard</div>
+  <div class="mobile-nav-item" onclick="showPage('arduino');closeMobileNav()">Arduino</div>
+  <div class="mobile-nav-item" onclick="openModal('login');closeMobileNav()">Login</div>
+  <div class="mobile-nav-item" onclick="openModal('register');closeMobileNav()">Register</div>
+</div>
+
+<!-- NOTIFICATION PANEL -->
+<div id="notif-panel">
+  <div class="notif-header"><i class="fas fa-bell"></i> Notifications</div>
+  <div id="notif-list"></div>
+</div>
+
+<!-- ============================================================
+     SUCCESS POPUP
+     ============================================================ -->
+<div id="success-popup">
+  <div class="popup-inner">
+    <div class="popup-icon"><i class="fas fa-check"></i></div>
+    <div>
+      <div class="popup-title">♻️ Arduino Signal Received!</div>
+      <div class="popup-body" id="popup-waste-type">Item detected and processed</div>
+      <div class="popup-credits" id="popup-credits">+0 Credits</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     LANDING PAGE
+     ============================================================ -->
+<div id="landing-page" class="page active">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg-grid"></div>
+    <div class="hero-content">
+      <div class="hero-text">
+        <div class="hero-eyebrow">Smart IoT Recycling Platform</div>
+        <h1 class="hero-title">
+          Recycle <span class="highlight">E-Waste.</span><br>
+          Earn <span class="highlight">Rewards.</span><br>
+          Save the <span class="highlight">Planet.</span>
+        </h1>
+        <p class="hero-tagline">
+          Drop your old electronics into our AI-powered smart bin. 
+          Earn eco-credits instantly via Arduino IoT integration. 
+          Track your impact. Redeem real rewards.
+        </p>
+        <div class="hero-cta">
+          <button class="btn btn-primary btn-lg" onclick="openModal('register')">
+            <i class="fas fa-rocket"></i> Get Started Free
+          </button>
+          <button class="btn btn-outline btn-lg" onclick="smoothScrollTo('#how-it-works')">
+            <i class="fas fa-play"></i> See How It Works
+          </button>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <div class="stat-value" data-count="1247">0</div>
+            <div class="stat-label">Users</div>
+          </div>
+          <div class="hero-stat">
+            <div class="stat-value" data-count="8430">0</div>
+            <div class="stat-label">Items Recycled</div>
+          </div>
+          <div class="hero-stat">
+            <div class="stat-value" data-count="342">0</div>
+            <div class="stat-label">kg Saved</div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="bin-container">
+          <div class="bin-glow-ring"></div>
+          <div class="bin-glow-ring"></div>
+          <div class="bin-glow-ring"></div>
+          <div class="bin-particle"></div>
+          <div class="bin-particle"></div>
+          <div class="bin-particle"></div>
+          <div class="bin-svg-wrap">
+            <svg class="bin-svg" viewBox="0 0 160 200" xmlns="http://www.w3.org/2000/svg">
+              <!-- Bin body -->
+              <rect x="20" y="60" width="120" height="130" rx="10" fill="rgba(0,20,10,0.9)" stroke="#00ff78" stroke-width="2"/>
+              <!-- Bin lid -->
+              <rect x="10" y="44" width="140" height="20" rx="6" fill="rgba(0,30,15,0.95)" stroke="#00ff78" stroke-width="2"/>
+              <!-- Lid handle -->
+              <rect x="60" y="36" width="40" height="12" rx="6" fill="rgba(0,40,20,0.9)" stroke="#00c45e" stroke-width="1.5"/>
+              <!-- Glowing slot -->
+              <rect x="45" y="50" width="70" height="8" rx="4" fill="rgba(0,255,120,0.3)" stroke="#00ff78" stroke-width="1"/>
+              <!-- Glow on slot -->
+              <rect x="45" y="50" width="70" height="8" rx="4" fill="url(#slotGlow)" opacity="0.7"/>
+              <!-- Circuit lines -->
+              <line x1="35" y1="80" x2="65" y2="80" stroke="#00ff78" stroke-width="0.8" opacity="0.5"/>
+              <line x1="65" y1="80" x2="65" y2="100" stroke="#00ff78" stroke-width="0.8" opacity="0.5"/>
+              <line x1="65" y1="100" x2="95" y2="100" stroke="#00ff78" stroke-width="0.8" opacity="0.5"/>
+              <line x1="95" y1="80" x2="125" y2="80" stroke="#00ff78" stroke-width="0.8" opacity="0.5"/>
+              <!-- Dots -->
+              <circle cx="35" cy="80" r="3" fill="#00ff78" opacity="0.6"/>
+              <circle cx="65" cy="100" r="3" fill="#00ffe7" opacity="0.6"/>
+              <circle cx="95" cy="80" r="3" fill="#00ff78" opacity="0.6"/>
+              <!-- Recycle symbol -->
+              <text x="80" y="155" text-anchor="middle" font-size="40" fill="#00ff78" opacity="0.15" font-family="serif">♻</text>
+              <text x="80" y="155" text-anchor="middle" font-size="26" fill="#00ff78" opacity="0.7" font-family="serif">♻</text>
+              <!-- LEDs -->
+              <circle cx="130" cy="75" r="4" fill="#00ff78">
+                <animate attributeName="opacity" values="1;0.2;1" dur="1.2s" repeatCount="indefinite"/>
+              </circle>
+              <circle cx="130" cy="90" r="4" fill="#00ffe7">
+                <animate attributeName="opacity" values="0.2;1;0.2" dur="1.2s" repeatCount="indefinite"/>
+              </circle>
+              <!-- Gradient defs -->
+              <defs>
+                <linearGradient id="slotGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" style="stop-color:#00ff78;stop-opacity:0"/>
+                  <stop offset="50%" style="stop-color:#00ff78;stop-opacity:1"/>
+                  <stop offset="100%" style="stop-color:#00ff78;stop-opacity:0"/>
+                  <animateTransform attributeName="gradientTransform" type="translate" values="-1 0;1 0;-1 0" dur="2s" repeatCount="indefinite"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT SECTION -->
+  <div id="about">
+    <div class="section">
+      <div class="about-grid">
+        <div class="about-text">
+          <span class="badge badge-green" style="margin-bottom:1rem;"><i class="fas fa-circle-info"></i> About Project</span>
+          <h2 class="section-title">Smart IoT-Powered<br><span style="color:var(--neon-green)">E-Waste Management</span></h2>
+          <p>EcoBin is a final-year engineering project that bridges hardware and software to tackle the growing e-waste crisis. Our Arduino-based smart bin identifies and weighs disposed electronics, then rewards users with eco-credits through a real-time web platform.</p>
+          <p>Every time you drop in an old phone, charger, or battery — sensors detect it, Arduino processes the signal, and your account is credited instantly. It's recycling reimagined for the digital age.</p>
+          <ul>
+            <li><i class="fas fa-check-circle"></i> Real-time Arduino ↔ Web communication</li>
+            <li><i class="fas fa-check-circle"></i> IoT sensor integration (weight + IR)</li>
+            <li><i class="fas fa-check-circle"></i> Gamified recycling with reward credits</li>
+            <li><i class="fas fa-check-circle"></i> Leaderboard and impact tracking</li>
+            <li><i class="fas fa-check-circle"></i> Redeemable eco-rewards program</li>
+          </ul>
+        </div>
+        <div>
+          <div class="glass-card" style="padding:2rem;">
+            <div class="iot-diagram-grid" style="margin:0;">
+              <div class="iot-node glass-card">
+                <div class="iot-icon">🗑️</div>
+                <div class="iot-label">Smart Bin</div>
+                <div class="iot-desc">IR + weight sensors detect inserted e-waste items</div>
+              </div>
+              <div class="iot-node glass-card">
+                <div class="iot-icon">⚡</div>
+                <div class="iot-label">Arduino Uno</div>
+                <div class="iot-desc">Processes sensor data & sends HTTP signal via ESP8266</div>
+              </div>
+              <div class="iot-node glass-card">
+                <div class="iot-icon">🌐</div>
+                <div class="iot-label">Web API</div>
+                <div class="iot-desc">Receives signal, assigns credits, updates user account</div>
+              </div>
+              <div class="iot-node glass-card">
+                <div class="iot-icon">🏆</div>
+                <div class="iot-label">Dashboard</div>
+                <div class="iot-desc">User sees live credit update and recycling history</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div id="how-it-works" class="how-it-works-bg">
+    <div class="section" style="padding-top:0;padding-bottom:0;">
+      <div style="text-align:center;padding:3rem 0 2rem;">
+        <span class="badge badge-cyan" style="margin-bottom:1rem;"><i class="fas fa-gears"></i> Process</span>
+        <h2 class="section-title">How It Works</h2>
+        <p class="section-subtitle">Four simple steps from waste to rewards</p>
+      </div>
+    </div>
+    <div class="steps-grid" style="max-width:1200px;margin:0 auto;padding:0 2rem 4rem;">
+      <div class="step-card glass-card">
+        <div class="step-number">01</div>
+        <div class="step-icon"><i class="fas fa-mobile-alt"></i></div>
+        <div class="step-title">Drop E-Waste</div>
+        <div class="step-desc">Insert your old electronics into the EcoBin slot — phones, chargers, batteries, earphones, cables, and more.</div>
+      </div>
+      <div class="step-card glass-card">
+        <div class="step-number">02</div>
+        <div class="step-icon"><i class="fas fa-microchip"></i></div>
+        <div class="step-title">Sensor Detects</div>
+        <div class="step-desc">Arduino's IR and weight sensors identify the item type and mass. Data is processed onboard in milliseconds.</div>
+      </div>
+      <div class="step-card glass-card">
+        <div class="step-number">03</div>
+        <div class="step-icon"><i class="fas fa-wifi"></i></div>
+        <div class="step-title">Signal Sent</div>
+        <div class="step-desc">ESP8266 WiFi module transmits a secure HTTP POST request to our web server with item details and user PRN.</div>
+      </div>
+      <div class="step-card glass-card">
+        <div class="step-number">04</div>
+        <div class="step-icon"><i class="fas fa-coins"></i></div>
+        <div class="step-title">Earn Credits</div>
+        <div class="step-desc">Your account is instantly credited. Watch your eco-credits grow and redeem them for real rewards and coupons.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <div class="section">
+    <span class="badge badge-green" style="margin-bottom:1rem;"><i class="fas fa-star"></i> Features</span>
+    <h2 class="section-title">Everything You Need</h2>
+    <p class="section-subtitle">A complete eco-rewards ecosystem</p>
+    <div class="features-grid">
+      <div class="feature-card glass-card">
+        <div class="feature-icon"><i class="fas fa-bolt"></i></div>
+        <h3>Real-Time Updates</h3>
+        <p>Credits are applied instantly the moment Arduino sends its signal. No delays, no manual logging needed.</p>
+      </div>
+      <div class="feature-card glass-card">
+        <div class="feature-icon"><i class="fas fa-trophy"></i></div>
+        <h3>Leaderboard</h3>
+        <p>Compete with peers across your college. Climb the rankings and earn Gold, Silver, and Bronze recycler badges.</p>
+      </div>
+      <div class="feature-card glass-card">
+        <div class="feature-icon"><i class="fas fa-leaf"></i></div>
+        <h3>Eco Impact Tracker</h3>
+        <p>See exactly how many kilograms of toxic waste you've diverted from landfill. Your environmental contribution visualized.</p>
+      </div>
+      <div class="feature-card glass-card">
+        <div class="feature-icon"><i class="fas fa-gift"></i></div>
+        <h3>Reward Redemption</h3>
+        <p>Exchange your eco-credits for discount coupons, canteen vouchers, and digital certificates of appreciation.</p>
+      </div>
+      <div class="feature-card glass-card">
+        <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+        <h3>Analytics Dashboard</h3>
+        <p>Beautiful charts track your recycling trends over time. Weekly and monthly breakdowns with category insights.</p>
+      </div>
+      <div class="feature-card glass-card">
+        <div class="feature-icon"><i class="fas fa-medal"></i></div>
+        <h3>Achievement Badges</h3>
+        <p>Unlock special achievements as you hit recycling milestones. First item, 10 items, 50 items and beyond.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMPACT COUNTER -->
+  <div class="impact-bg">
+    <div class="section" style="padding-top:0;padding-bottom:0;">
+      <div style="text-align:center;padding:3rem 0 2rem;">
+        <h2 class="section-title">Our Collective <span style="color:var(--neon-green)">Impact</span></h2>
+        <p class="section-subtitle">Together we're making a difference</p>
+      </div>
+    </div>
+    <div class="impact-grid" style="padding:0 2rem 4rem;">
+      <div class="impact-item">
+        <div class="impact-value" data-count="8430" id="imp1">0</div>
+        <div class="impact-label">Items Recycled</div>
+        <div class="impact-unit">and counting</div>
+      </div>
+      <div class="impact-item">
+        <div class="impact-value" data-count="342" id="imp2">0</div>
+        <div class="impact-label">kg Toxic Waste Saved</div>
+        <div class="impact-unit">from landfill</div>
+      </div>
+      <div class="impact-item">
+        <div class="impact-value" data-count="1247" id="imp3">0</div>
+        <div class="impact-label">Active Users</div>
+        <div class="impact-unit">eco-warriors</div>
+      </div>
+      <div class="impact-item">
+        <div class="impact-value" data-count="54" id="imp4">0</div>
+        <div class="impact-label">Tons CO₂ Offset</div>
+        <div class="impact-unit">estimated</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="topbar-logo" style="font-size:1.1rem;">
+          <div class="logo-icon"><i class="fas fa-recycle"></i></div>
+          ECO<span style="color:var(--text-secondary)">BIN</span>
+        </div>
+        <p>A final-year IoT project combining Arduino hardware with a modern web platform to tackle e-waste through gamified recycling incentives.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Platform</h4>
+        <ul>
+          <li><a onclick="openModal('register')">Register</a></li>
+          <li><a onclick="openModal('login')">Login</a></li>
+          <li><a onclick="showPage('leaderboard')">Leaderboard</a></li>
+          <li><a onclick="showPage('arduino')">Arduino Docs</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Project</h4>
+        <ul>
+          <li><a onclick="smoothScrollTo('#about')">About</a></li>
+          <li><a onclick="smoothScrollTo('#how-it-works')">How It Works</a></li>
+          <li><a onclick="openAdminLogin()">Admin Panel</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2025 EcoBin — Smart E-Waste Recycling Platform</span>
+      <span style="color:var(--neon-green);">Built with ♻️ & <i class="fas fa-heart"></i></span>
+    </div>
+  </footer>
+</div>
+
+<!-- ============================================================
+     DASHBOARD PAGE
+     ============================================================ -->
+<div id="dashboard-page" class="page">
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-section-label">Main</div>
+    <div class="sidebar-item active" onclick="navigateDash('overview')" id="nav-overview">
+      <i class="fas fa-house"></i> Overview
+    </div>
+    <div class="sidebar-item" onclick="navigateDash('history')" id="nav-history">
+      <i class="fas fa-clock-rotate-left"></i> History
+    </div>
+    <div class="sidebar-item" onclick="navigateDash('analytics')" id="nav-analytics">
+      <i class="fas fa-chart-bar"></i> Analytics
+    </div>
+    <div class="sidebar-section-label">Rewards</div>
+    <div class="sidebar-item" onclick="navigateDash('achievements')" id="nav-achievements">
+      <i class="fas fa-medal"></i> Achievements
+    </div>
+    <div class="sidebar-item" onclick="navigateDash('redeem')" id="nav-redeem">
+      <i class="fas fa-gift"></i> Redeem
+    </div>
+    <div class="sidebar-item" onclick="navigateDash('impact')" id="nav-impact">
+      <i class="fas fa-leaf"></i> Eco Impact
+    </div>
+    <div class="sidebar-section-label">Account</div>
+    <div class="sidebar-item" onclick="navigateDash('profile')" id="nav-profile">
+      <i class="fas fa-user"></i> Profile
+    </div>
+    <div class="sidebar-item" onclick="showPage('leaderboard')">
+      <i class="fas fa-trophy"></i> Leaderboard
+    </div>
+    <div class="sidebar-item" onclick="showPage('arduino')">
+      <i class="fas fa-microchip"></i> Arduino Docs
+    </div>
+    <div class="sidebar-item" onclick="showQrModal()">
+      <i class="fas fa-qrcode"></i> My QR Code
+    </div>
+    <div class="sidebar-item" onclick="showCertModal()">
+      <i class="fas fa-certificate"></i> Certificate
+    </div>
+    <div class="sidebar-item" onclick="logout()" style="color:var(--danger);margin-top:auto;">
+      <i class="fas fa-arrow-right-from-bracket"></i> Logout
+    </div>
+    <div class="sidebar-credits">
+      <div class="sc-label">Total Credits</div>
+      <div class="sc-value" id="sidebar-credits-val">0</div>
+      <div class="sc-sub">eco-points</div>
+    </div>
+  </div>
+
+  <!-- Main Area -->
+  <div class="dash-main">
+    <!-- Hamburger for sidebar on mobile -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:1.5rem;" id="dash-mobile-header">
+      <button style="display:none;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-secondary);cursor:pointer;font-size:0.9rem;" id="sidebar-toggle-btn" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+
+    <!-- OVERVIEW VIEW -->
+    <div class="dash-view active" id="view-overview">
+      <div class="dash-header">
+        <h1>Welcome back, <span id="dash-welcome-name" style="color:var(--neon-green);">User</span> 👋</h1>
+        <p id="dash-subtitle">Here's your recycling summary today</p>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card glass-card">
+          <div class="sc-icon"><i class="fas fa-coins"></i></div>
+          <div class="sc-value-main" id="stat-credits">0</div>
+          <div class="sc-label-main">Total Credits</div>
+          <div class="sc-change"><i class="fas fa-arrow-up"></i> Earn more by recycling</div>
+        </div>
+        <div class="stat-card glass-card">
+          <div class="sc-icon cyan"><i class="fas fa-recycle"></i></div>
+          <div class="sc-value-main" id="stat-items">0</div>
+          <div class="sc-label-main">Items Recycled</div>
+          <div class="sc-change sc-change-cyan" style="color:var(--neon-cyan)"><i class="fas fa-leaf"></i> Great work!</div>
+        </div>
+        <div class="stat-card glass-card">
+          <div class="sc-icon yellow"><i class="fas fa-weight-scale"></i></div>
+          <div class="sc-value-main" id="stat-kg">0</div>
+          <div class="sc-label-main">kg Saved</div>
+          <div class="sc-change" style="color:var(--neon-yellow)"><i class="fas fa-seedling"></i> Eco impact</div>
+        </div>
+        <div class="stat-card glass-card">
+          <div class="sc-icon gold"><i class="fas fa-ranking-star"></i></div>
+          <div class="sc-value-main" id="stat-rank">#--</div>
+          <div class="sc-label-main">Your Rank</div>
+          <div class="sc-change" style="color:var(--gold)"><i class="fas fa-fire"></i> Climb higher!</div>
+        </div>
+      </div>
+
+      <!-- Arduino Simulate Button -->
+      <div class="arduino-btn-wrap">
+        <button class="arduino-simulate-btn" onclick="simulateArduino()">
+          <i class="fas fa-microchip arduino-icon"></i>
+          <span>⚡ Simulate Arduino Signal</span>
+          <span class="badge badge-green" style="margin-left:auto;">DEMO MODE</span>
+        </button>
+      </div>
+
+      <!-- Level Progress -->
+      <div class="level-section glass-card" style="padding:1.5rem;">
+        <div class="level-header">
+          <span class="level-title">Recycler Level — <span id="level-name" style="color:var(--neon-green)">Novice</span></span>
+          <span class="level-badge" id="level-badge">Level 1</span>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+        </div>
+        <div class="progress-note" id="progress-note">Earn more credits to level up</div>
+      </div>
+
+      <!-- Charts -->
+      <div class="chart-section" style="margin-top:1.5rem;">
+        <h3><i class="fas fa-chart-line" style="color:var(--neon-green);margin-right:8px;"></i>Recycling Trend (Last 7 Days)</h3>
+        <div class="chart-card glass-card">
+          <canvas id="trend-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="activity-section">
+        <h3><i class="fas fa-clock-rotate-left" style="color:var(--neon-cyan);margin-right:8px;"></i>Recent Activity</h3>
+        <div class="activity-list" id="recent-activity"></div>
+      </div>
+    </div>
+
+    <!-- HISTORY VIEW -->
+    <div class="dash-view" id="view-history">
+      <div class="dash-header">
+        <h1>Recycling <span style="color:var(--neon-green);">History</span></h1>
+        <p>All your past recycling sessions</p>
+      </div>
+      <div style="margin-bottom:1.5rem;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+        <input type="text" id="history-search" placeholder="Search by item type..." 
+          style="padding:10px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;color:var(--text-primary);font-family:Syne,sans-serif;flex:1;min-width:200px;outline:none;font-size:0.88rem;"
+          oninput="filterHistory()">
+        <span id="history-count" class="badge badge-green">0 records</span>
+      </div>
+      <div class="activity-list" id="full-history"></div>
+    </div>
+
+    <!-- ANALYTICS VIEW -->
+    <div class="dash-view" id="view-analytics">
+      <div class="dash-header">
+        <h1>Your <span style="color:var(--neon-green);">Analytics</span></h1>
+        <p>Deep dive into your recycling data</p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+        <div class="chart-card glass-card">
+          <canvas id="donut-chart"></canvas>
+        </div>
+        <div class="chart-card glass-card">
+          <canvas id="bar-chart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card glass-card" style="height:auto;padding:1.5rem;margin-bottom:1.5rem;">
+        <h3 style="font-family:Orbitron,monospace;font-size:0.9rem;margin-bottom:1rem;color:var(--text-primary);">Credits Over Time</h3>
+        <canvas id="credits-chart" style="height:200px;"></canvas>
+      </div>
+    </div>
+
+    <!-- ACHIEVEMENTS VIEW -->
+    <div class="dash-view" id="view-achievements">
+      <div class="dash-header">
+        <h1>Your <span style="color:var(--neon-green);">Achievements</span></h1>
+        <p>Milestones and badges you've earned</p>
+      </div>
+      <div class="achievements-grid" id="achievements-grid"></div>
+    </div>
+
+    <!-- REDEEM VIEW -->
+    <div class="dash-view" id="view-redeem">
+      <div class="dash-header">
+        <h1>Redeem <span style="color:var(--neon-green);">Rewards</span></h1>
+        <p>Exchange your eco-credits for real perks</p>
+      </div>
+      <div style="margin-bottom:1.5rem;padding:1rem 1.5rem;background:rgba(0,255,120,0.06);border:1px solid var(--border-bright);border-radius:var(--radius);display:flex;align-items:center;gap:12px;">
+        <i class="fas fa-coins" style="color:var(--neon-green);font-size:1.3rem;"></i>
+        <span style="font-size:0.9rem;color:var(--text-secondary);">Available Balance:</span>
+        <span style="font-family:Orbitron,monospace;font-size:1.4rem;font-weight:700;color:var(--neon-green);" id="redeem-balance">0</span>
+        <span style="font-size:0.8rem;color:var(--text-muted);">credits</span>
+      </div>
+      <div class="redeem-grid" id="redeem-grid"></div>
+    </div>
+
+    <!-- ECO IMPACT VIEW -->
+    <div class="dash-view" id="view-impact">
+      <div class="dash-header">
+        <h1>Your Eco <span style="color:var(--neon-green);">Impact</span></h1>
+        <p>The real-world difference you're making</p>
+      </div>
+      <div class="eco-impact-grid" id="eco-impact-grid"></div>
+    </div>
+
+    <!-- PROFILE VIEW -->
+    <div class="dash-view" id="view-profile">
+      <div class="dash-header">
+        <h1>My <span style="color:var(--neon-green);">Profile</span></h1>
+        <p>Manage your account settings</p>
+      </div>
+      <div class="profile-grid">
+        <div class="profile-card-main glass-card">
+          <div class="profile-avatar-lg" id="profile-avatar-text">??</div>
+          <div class="profile-name" id="profile-name-disp">Name</div>
+          <div class="profile-prn" id="profile-prn-disp">PRN: ---</div>
+          <div id="profile-badges" style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:1rem 0;"></div>
+          <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem;" id="profile-dept-disp"></div>
+          <div style="font-size:0.8rem;color:var(--text-muted);" id="profile-email-disp"></div>
+        </div>
+        <div class="profile-edit glass-card">
+          <h3><i class="fas fa-pen" style="color:var(--neon-green);margin-right:8px;"></i>Edit Profile</h3>
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="edit-name" placeholder="Your full name">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="edit-email" placeholder="your@email.com">
+          </div>
+          <div class="form-group">
+            <label>Department</label>
+            <input type="text" id="edit-dept" placeholder="Department">
+          </div>
+          <button class="btn btn-primary" onclick="saveProfile()" style="margin-top:0.5rem;">
+            <i class="fas fa-save"></i> Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     LEADERBOARD PAGE
+     ============================================================ -->
+<div id="leaderboard-page" class="page" style="padding-top:64px;">
+  <div style="max-width:900px;margin:0 auto;padding:2rem;">
+    <div class="leaderboard-header">
+      <span class="badge badge-gold" style="margin-bottom:1rem;"><i class="fas fa-trophy"></i> Rankings</span>
+      <h1 class="section-title">Top <span style="color:var(--neon-green);">Eco Recyclers</span></h1>
+      <p class="section-subtitle">College-wide e-waste recycling leaderboard</p>
+    </div>
+    <div class="podium" id="podium-section"></div>
+    <div class="leaderboard-table" id="leaderboard-table"></div>
+    <div style="text-align:center;margin-top:2rem;">
+      <button class="btn btn-outline" onclick="showPage('landing')"><i class="fas fa-arrow-left"></i> Back to Home</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     ARDUINO PAGE
+     ============================================================ -->
+<div id="arduino-page" class="page" style="padding-top:64px;">
+  <div class="arduino-section">
+    <div style="text-align:center;padding:3rem 0 2rem;">
+      <span class="badge badge-cyan" style="margin-bottom:1rem;"><i class="fas fa-microchip"></i> Technical Docs</span>
+      <h1 class="section-title">Arduino <span style="color:var(--neon-cyan);">Integration</span></h1>
+      <p class="section-subtitle">How the hardware connects to this web platform</p>
+    </div>
+
+    <div class="iot-diagram-grid">
+      <div class="iot-node glass-card"><div class="iot-icon">📡</div><div class="iot-label">IR Sensor</div><div class="iot-desc">Detects item insertion via infrared beam interruption</div></div>
+      <div class="iot-node glass-card"><div class="iot-icon">⚖️</div><div class="iot-label">Load Cell</div><div class="iot-desc">HX711 module measures item weight for classification</div></div>
+      <div class="iot-node glass-card"><div class="iot-icon">🧠</div><div class="iot-label">Arduino Uno</div><div class="iot-desc">Main microcontroller — reads sensors and controls flow</div></div>
+      <div class="iot-node glass-card"><div class="iot-icon">📶</div><div class="iot-label">ESP8266</div><div class="iot-desc">WiFi module sends HTTP POST to web server via serial</div></div>
+      <div class="iot-node glass-card"><div class="iot-icon">🔒</div><div class="iot-label">RFID Reader</div><div class="iot-desc">RC522 scans user ID card to identify who is recycling</div></div>
+      <div class="iot-node glass-card"><div class="iot-icon">💡</div><div class="iot-label">LED Strip</div><div class="iot-desc">Visual feedback — green for success, red for error</div></div>
+    </div>
+
+    <div class="code-card glass-card">
+      <div class="code-card-label"><i class="fas fa-code"></i> Arduino Code (Main Sketch)</div>
+<pre>
+<span class="cm">// EcoBin Arduino Sketch - Main Controller</span>
+<span class="cm">// Connect: IR Sensor (D2), HX711 (D3/D4), ESP8266 (RX/TX)</span>
+
+<span class="kw">#include</span> <span class="str">&lt;SoftwareSerial.h&gt;</span>
+<span class="kw">#include</span> <span class="str">"HX711.h"</span>
+
+<span class="kw">#define</span> IR_PIN     <span class="num">2</span>
+<span class="kw">#define</span> HX711_DT   <span class="num">3</span>
+<span class="kw">#define</span> HX711_SCK  <span class="num">4</span>
+<span class="kw">#define</span> LED_GREEN  <span class="num">8</span>
+<span class="kw">#define</span> LED_RED    <span class="num">9</span>
+
+HX711 <span class="fn">scale</span>;
+SoftwareSerial <span class="fn">esp8266</span>(<span class="num">10</span>, <span class="num">11</span>); <span class="cm">// RX, TX</span>
+
+<span class="kw">const char*</span> USER_PRN = <span class="str">"PRN2024001"</span>;
+<span class="kw">const char*</span> SERVER   = <span class="str">"192.168.1.100"</span>;
+
+<span class="kw">void</span> <span class="fn">setup</span>() {
+  Serial.<span class="fn">begin</span>(<span class="num">9600</span>);
+  esp8266.<span class="fn">begin</span>(<span class="num">115200</span>);
+  scale.<span class="fn">begin</span>(HX711_DT, HX711_SCK);
+  scale.<span class="fn">set_scale</span>(<span class="num">2280.f</span>);
+  scale.<span class="fn">tare</span>();
+  pinMode(IR_PIN, INPUT);
+  pinMode(LED_GREEN, OUTPUT);
+  pinMode(LED_RED, OUTPUT);
+  Serial.<span class="fn">println</span>(<span class="str">"EcoBin Ready..."</span>);
+}
+
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="kw">if</span> (digitalRead(IR_PIN) == LOW) {
+    delay(<span class="num">500</span>); <span class="cm">// debounce</span>
+    <span class="kw">float</span> weight = scale.<span class="fn">get_units</span>(<span class="num">5</span>);
+    Serial.<span class="fn">print</span>(<span class="str">"Weight: "</span>);
+    Serial.<span class="fn">println</span>(weight);
+    <span class="fn">sendToServer</span>(weight);
+    delay(<span class="num">3000</span>);
+  }
+}
+
+<span class="kw">void</span> <span class="fn">sendToServer</span>(<span class="kw">float</span> weight) {
+  String payload = <span class="str">"prn="</span> + String(USER_PRN) +
+                   <span class="str">"&amp;weight="</span> + String(weight);
+  esp8266.<span class="fn">println</span>(<span class="str">"AT+CIPSTART=\"TCP\",\""</span> + 
+                   String(SERVER) + <span class="str">"\",80"</span>);
+  delay(<span class="num">1000</span>);
+  String req = <span class="str">"POST /api/recycle HTTP/1.1\r\n"</span> +
+               <span class="str">"Host: "</span> + String(SERVER) + <span class="str">"\r\n"</span> +
+               <span class="str">"Content-Length: "</span> + payload.<span class="fn">length</span>() + <span class="str">"\r\n\r\n"</span> +
+               payload;
+  esp8266.<span class="fn">println</span>(<span class="str">"AT+CIPSEND="</span> + String(req.<span class="fn">length</span>()));
+  delay(<span class="num">500</span>);
+  esp8266.<span class="fn">print</span>(req);
+  digitalWrite(LED_GREEN, HIGH);
+  delay(<span class="num">2000</span>);
+  digitalWrite(LED_GREEN, LOW);
+}
+</pre>
+    </div>
+
+    <div class="code-card glass-card">
+      <div class="code-card-label"><i class="fas fa-server"></i> Example API Endpoint (Node.js / Express)</div>
+<pre>
+<span class="cm">// EcoBin API Server — /api/recycle endpoint</span>
+<span class="kw">const</span> express = <span class="fn">require</span>(<span class="str">'express'</span>);
+<span class="kw">const</span> app = express();
+app.<span class="fn">use</span>(express.<span class="fn">urlencoded</span>({ extended: <span class="kw">true</span> }));
+
+<span class="kw">const</span> wasteTypes = [
+  <span class="str">'Battery'</span>, <span class="str">'Mobile Phone'</span>, <span class="str">'Charger'</span>,
+  <span class="str">'Earphones'</span>, <span class="str">'Laptop Parts'</span>, <span class="str">'USB Cable'</span>
+];
+
+<span class="cm">// Calculate credits based on item weight</span>
+<span class="kw">function</span> <span class="fn">calcCredits</span>(weight) {
+  <span class="kw">if</span> (weight &lt; <span class="num">50</span>)  <span class="kw">return</span> <span class="num">5</span>;
+  <span class="kw">if</span> (weight &lt; <span class="num">200</span>) <span class="kw">return</span> <span class="num">10</span>;
+  <span class="kw">if</span> (weight &lt; <span class="num">500</span>) <span class="kw">return</span> <span class="num">20</span>;
+  <span class="kw">return</span> <span class="num">30</span>;
+}
+
+app.<span class="fn">post</span>(<span class="str">'/api/recycle'</span>, (req, res) => {
+  <span class="kw">const</span> { prn, weight } = req.body;
+  <span class="kw">const</span> user = db.<span class="fn">findByPRN</span>(prn);
+  <span class="kw">if</span> (!user) <span class="kw">return</span> res.<span class="fn">status</span>(<span class="num">404</span>).<span class="fn">json</span>({ error: <span class="str">'User not found'</span> });
+  
+  <span class="kw">const</span> credits = <span class="fn">calcCredits</span>(<span class="fn">parseFloat</span>(weight));
+  <span class="kw">const</span> wasteType = wasteTypes[Math.<span class="fn">floor</span>(Math.<span class="fn">random</span>() * wasteTypes.length)];
+  
+  user.credits += credits;
+  db.<span class="fn">addHistory</span>(prn, { wasteType, credits, weight, timestamp: <span class="kw">new</span> Date() });
+  
+  res.<span class="fn">json</span>({ success: <span class="kw">true</span>, credits, total: user.credits, wasteType });
+  <span class="fn">broadcastUpdate</span>(prn, credits); <span class="cm">// WebSocket push to dashboard</span>
+});
+
+app.<span class="fn">listen</span>(<span class="num">3000</span>, () => console.<span class="fn">log</span>(<span class="str">'EcoBin API running on port 3000'</span>));
+</pre>
+    </div>
+
+    <div style="text-align:center;margin-top:2rem;">
+      <button class="btn btn-outline" onclick="showPage('landing')"><i class="fas fa-arrow-left"></i> Back to Home</button>
+      <button class="btn btn-primary" style="margin-left:12px;" onclick="openModal('register')"><i class="fas fa-user-plus"></i> Register Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     ADMIN PAGE
+     ============================================================ -->
+<div id="admin-page" class="page" style="padding-top:64px;">
+  <!-- Admin Login -->
+  <div class="admin-login-wrap" id="admin-login-wrap">
+    <div class="admin-login-card glass-card">
+      <div class="admin-logo"><i class="fas fa-shield-halved"></i> ADMIN ACCESS ONLY</div>
+      <div class="modal-title" style="margin-bottom:0.3rem;">Admin Panel</div>
+      <div class="modal-subtitle">Restricted to authorized personnel</div>
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="admin-user-input" placeholder="admin" value="admin">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="admin-pass-input" placeholder="••••••••">
+      </div>
+      <div class="form-error" id="admin-login-error">Invalid credentials</div>
+      <button class="btn btn-primary" style="width:100%;margin-top:0.5rem;" onclick="adminLogin()">
+        <i class="fas fa-lock-open"></i> Access Panel
+      </button>
+      <div class="form-link" style="margin-top:1rem;">
+        <a onclick="showPage('landing')">← Back to Home</a>
+      </div>
+    </div>
+  </div>
+  <!-- Admin Dashboard -->
+  <div class="admin-main" id="admin-dashboard-wrap" style="display:none;">
+    <div class="admin-topbar">
+      <h1><i class="fas fa-shield-halved" style="color:var(--danger);margin-right:10px;"></i>Admin Panel</h1>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-outline btn-sm" onclick="resetDatabase()"><i class="fas fa-trash-can"></i> Reset DB</button>
+        <button class="btn btn-outline btn-sm" onclick="showPage('landing')"><i class="fas fa-arrow-left"></i> Exit</button>
+      </div>
+    </div>
+    <div class="admin-grid" id="admin-stats-grid"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+      <div class="glass-card" style="padding:1.5rem;">
+        <h3 style="font-family:Orbitron,monospace;font-size:0.9rem;margin-bottom:1rem;"><i class="fas fa-bolt" style="color:var(--neon-green);margin-right:8px;"></i>Live Activity Feed</h3>
+        <div class="activity-feed" id="admin-activity-feed"></div>
+      </div>
+      <div class="glass-card" style="padding:1.5rem;">
+        <h3 style="font-family:Orbitron,monospace;font-size:0.9rem;margin-bottom:1rem;"><i class="fas fa-hand-pointer" style="color:var(--warning);margin-right:8px;"></i>Manual Credit Trigger</h3>
+        <div class="form-group">
+          <label>Select User (PRN)</label>
+          <select id="admin-trigger-user" style="width:100%;padding:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:Syne,sans-serif;outline:none;"></select>
+        </div>
+        <div class="form-group">
+          <label>Credits to Add</label>
+          <input type="number" id="admin-trigger-credits" value="15" min="1" max="100" style="width:100%;padding:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:Syne,sans-serif;outline:none;">
+        </div>
+        <button class="btn btn-primary" onclick="adminTriggerCredit()" style="width:100%;"><i class="fas fa-plus"></i> Add Credits</button>
+      </div>
+    </div>
+    <div class="glass-card" style="padding:1.5rem;">
+      <h3 style="font-family:Orbitron,monospace;font-size:0.9rem;margin-bottom:1rem;"><i class="fas fa-users" style="color:var(--neon-cyan);margin-right:8px;"></i>All Registered Users</h3>
+      <div class="admin-users-table">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>PRN</th>
+              <th>Email</th>
+              <th>Dept</th>
+              <th>Credits</th>
+              <th>Items</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="admin-users-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODALS
+     ============================================================ -->
+
+<!-- LOGIN MODAL -->
+<div class="modal-overlay hidden" id="login-modal-overlay" onclick="closeModalOnOverlay(event,'login')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('login')"><i class="fas fa-times"></i></button>
+    <div class="modal-title">Welcome Back 👋</div>
+    <div class="modal-subtitle">Login with your PRN number</div>
+    <div class="form-group">
+      <label>PRN Number</label>
+      <input type="text" id="login-prn" placeholder="e.g. 2024001">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="••••••••" onkeypress="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="form-error" id="login-error">Invalid PRN or password</div>
+    <button class="btn btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()">
+      <i class="fas fa-arrow-right-to-bracket"></i> Login
+    </button>
+    <div class="form-link">Don't have an account? <a onclick="switchModal('login','register')">Register here</a></div>
+    <div class="form-link" style="margin-top:0.3rem;">Admin? <a onclick="closeModal('login');openAdminLogin()">Admin login →</a></div>
+  </div>
+</div>
+
+<!-- REGISTER MODAL -->
+<div class="modal-overlay hidden" id="register-modal-overlay" onclick="closeModalOnOverlay(event,'register')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('register')"><i class="fas fa-times"></i></button>
+    <div class="modal-title">Join EcoBin 🌱</div>
+    <div class="modal-subtitle">Create your recycler account</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="reg-name" placeholder="Your full name">
+      </div>
+      <div class="form-group">
+        <label>PRN Number</label>
+        <input type="text" id="reg-prn" placeholder="e.g. 2024001">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Email Address</label>
+      <input type="email" id="reg-email" placeholder="your@college.edu">
+    </div>
+    <div class="form-group">
+      <label>Department</label>
+      <select id="reg-dept">
+        <option value="">Select department</option>
+        <option>Computer Engineering</option>
+        <option>Electronics & TC</option>
+        <option>Mechanical Engineering</option>
+        <option>Civil Engineering</option>
+        <option>Information Technology</option>
+        <option>Electrical Engineering</option>
+        <option>Other</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="reg-password" placeholder="••••••••">
+      </div>
+      <div class="form-group">
+        <label>Confirm Password</label>
+        <input type="password" id="reg-confirm" placeholder="••••••••">
+      </div>
+    </div>
+    <div class="form-error" id="register-error">Error message here</div>
+    <button class="btn btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doRegister()">
+      <i class="fas fa-user-plus"></i> Create Account
+    </button>
+    <div class="form-link">Already registered? <a onclick="switchModal('register','login')">Login here</a></div>
+  </div>
+</div>
+
+<!-- QR MODAL -->
+<div class="modal-overlay hidden" id="qr-modal-overlay" onclick="closeModalOnOverlay(event,'qr')">
+  <div class="modal" style="max-width:360px;">
+    <button class="modal-close" onclick="closeModal('qr')"><i class="fas fa-times"></i></button>
+    <div class="modal-title">My QR Code</div>
+    <div class="modal-subtitle">Show this at the EcoBin terminal to scan your identity</div>
+    <div class="qr-container">
+      <div class="qr-pattern" id="qr-pattern"></div>
+    </div>
+    <div style="text-align:center;font-family:Space Mono,monospace;font-size:0.8rem;color:var(--neon-green);" id="qr-prn-label"></div>
+    <div class="form-link" style="margin-top:1rem;color:var(--text-muted);font-size:0.78rem;">Scan at the Arduino RFID terminal</div>
+  </div>
+</div>
+
+<!-- CERT MODAL -->
+<div class="modal-overlay hidden" id="cert-modal-overlay" onclick="closeModalOnOverlay(event,'cert')">
+  <div class="modal" style="max-width:600px;">
+    <button class="modal-close" onclick="closeModal('cert')"><i class="fas fa-times"></i></button>
+    <div class="modal-title">Recycling Certificate</div>
+    <div id="cert-preview"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:0.5rem;" onclick="downloadCert()">
+      <i class="fas fa-download"></i> Download Certificate
+    </button>
+  </div>
+</div>
+
+<!-- REDEEM SUCCESS MODAL -->
+<div class="modal-overlay hidden" id="redeem-success-overlay" onclick="closeModalOnOverlay(event,'redeem-success')">
+  <div class="modal" style="max-width:400px;text-align:center;">
+    <button class="modal-close" onclick="closeModal('redeem-success')"><i class="fas fa-times"></i></button>
+    <div style="font-size:3rem;margin-bottom:1rem;">🎉</div>
+    <div class="modal-title">Coupon Redeemed!</div>
+    <div class="modal-subtitle" id="redeem-success-msg">Your reward has been applied</div>
+    <div style="margin:1.5rem 0;padding:1rem;background:rgba(0,255,120,0.06);border:1px dashed var(--neon-green);border-radius:var(--radius);font-family:Space Mono,monospace;font-size:1.1rem;color:var(--neon-green);" id="coupon-code">ECOBIN-XXXX</div>
+    <button class="btn btn-primary" style="width:100%;" onclick="closeModal('redeem-success')">Awesome!</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   APP STATE & DATABASE (localStorage)
+   ============================================================ */
+
+// Seed demo users if none exist
+function initDB() {
+  if (!localStorage.getItem('ecobin_users')) {
+    const demoUsers = [
+      { name: 'Aryan Sharma', prn: '2024001', email: 'aryan@college.edu', dept: 'Computer Engineering', password: 'demo123', credits: 340, history: [] },
+      { name: 'Priya Patel', prn: '2024002', email: 'priya@college.edu', dept: 'Electronics & TC', password: 'demo123', credits: 280, history: [] },
+      { name: 'Rahul Verma', prn: '2024003', email: 'rahul@college.edu', dept: 'Information Technology', password: 'demo123', credits: 195, history: [] },
+      { name: 'Sneha Kulkarni', prn: '2024004', email: 'sneha@college.edu', dept: 'Mechanical Engineering', password: 'demo123', credits: 155, history: [] },
+      { name: 'Dev Joshi', prn: '2024005', email: 'dev@college.edu', dept: 'Computer Engineering', password: 'demo123', credits: 90, history: [] },
+    ];
+    // Generate history for demo users
+    const wasteTypes = ['Battery','Mobile Phone','Charger','Earphones','Laptop Parts','USB Cable'];
+    const wasteIcons = { 'Battery':'🔋','Mobile Phone':'📱','Charger':'🔌','Earphones':'🎧','Laptop Parts':'💻','USB Cable':'🔗' };
+    demoUsers.forEach(user => {
+      let totalCredits = user.credits;
+      for (let i = 0; i < 8; i++) {
+        const cr = Math.floor(Math.random() * 25) + 5;
+        const type = wasteTypes[Math.floor(Math.random() * wasteTypes.length)];
+        const d = new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000);
+        user.history.push({
+          id: Date.now() + Math.random(),
+          type, credits: cr,
+          icon: wasteIcons[type],
+          date: d.toLocaleDateString('en-IN'),
+          time: d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+          timestamp: d.getTime()
+        });
+      }
+      user.history.sort((a, b) => b.timestamp - a.timestamp);
+    });
+    localStorage.setItem('ecobin_users', JSON.stringify(demoUsers));
+  }
+  if (!localStorage.getItem('ecobin_activity')) {
+    localStorage.setItem('ecobin_activity', JSON.stringify([]));
+  }
+  if (!localStorage.getItem('ecobin_notifications')) {
+    localStorage.setItem('ecobin_notifications', JSON.stringify([
+      { id: 1, text: 'Welcome to EcoBin! Start recycling to earn credits.', time: 'Just now' },
+      { id: 2, text: 'New reward available: Canteen Coupon for 50 credits!', time: '5m ago' }
+    ]));
+  }
+}
+
+function getUsers() { return JSON.parse(localStorage.getItem('ecobin_users') || '[]'); }
+function saveUsers(users) { localStorage.setItem('ecobin_users', JSON.stringify(users)); }
+function getCurrentUser() { const prn = localStorage.getItem('ecobin_current'); return getUsers().find(u => u.prn === prn) || null; }
+function getActivity() { return JSON.parse(localStorage.getItem('ecobin_activity') || '[]'); }
+function addActivity(entry) {
+  const act = getActivity();
+  act.unshift(entry);
+  if (act.length > 50) act.pop();
+  localStorage.setItem('ecobin_activity', JSON.stringify(act));
+}
+
+let currentPage = 'landing';
+let notificationsOpen = false;
+let charts = {};
+
+/* ============================================================
+   PARTICLES BACKGROUND
+   ============================================================ */
+(function initParticles() {
+  const canvas = document.getElementById('particles-canvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let W, H;
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  for (let i = 0; i < 60; i++) {
+    particles.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 2 + 0.5,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      alpha: Math.random() * 0.5 + 0.1,
+      color: Math.random() > 0.5 ? '0,255,120' : '0,255,231'
+    });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    // Draw connection lines
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 120) {
+          ctx.beginPath();
+          ctx.strokeStyle = `rgba(0,255,120,${0.06 * (1 - dist / 120)})`;
+          ctx.lineWidth = 0.5;
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+    // Draw particles
+    particles.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${p.color},${p.alpha})`;
+      ctx.fill();
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > W) p.vx *= -1;
+      if (p.y < 0 || p.y > H) p.vy *= -1;
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ============================================================
+   COUNTER ANIMATIONS
+   ============================================================ */
+function animateCounter(el, target, duration = 1500) {
+  let start = 0;
+  const step = target / (duration / 16);
+  function update() {
+    start = Math.min(start + step, target);
+    el.textContent = Math.floor(start).toLocaleString();
+    if (start < target) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+function initCounters() {
+  document.querySelectorAll('[data-count]').forEach(el => {
+    const target = parseInt(el.getAttribute('data-count'));
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        animateCounter(el, target);
+        observer.disconnect();
+      }
+    }, { threshold: 0.3 });
+    observer.observe(el);
+  });
+  // Impact counters
+  ['imp1','imp2','imp3','imp4'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const targets = [8430, 342, 1247, 54];
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        animateCounter(el, targets[i]);
+        observer.disconnect();
+      }
+    }, { threshold: 0.3 });
+    observer.observe(el);
+  });
+}
+
+/* ============================================================
+   PAGE NAVIGATION
+   ============================================================ */
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.remove('active');
+    p.style.display = 'none';
+  });
+  currentPage = page;
+  const pageEl = document.getElementById(page + '-page');
+  if (!pageEl) return;
+  pageEl.style.display = page === 'dashboard' ? 'flex' : 'block';
+  pageEl.classList.add('active');
+  window.scrollTo(0, 0);
+
+  if (page === 'dashboard') refreshDashboard();
+  if (page === 'leaderboard') renderLeaderboard();
+  if (page === 'admin') renderAdminPrep();
+}
+
+function smoothScrollTo(selector) {
+  const el = document.querySelector(selector);
+  if (el) el.scrollIntoView({ behavior: 'smooth' });
+}
+
+/* ============================================================
+   AUTHENTICATION
+   ============================================================ */
+function openModal(type) {
+  document.getElementById(type + '-modal-overlay').classList.remove('hidden');
+  // Clear errors
+  const err = document.getElementById(type + '-error');
+  if (err) err.classList.remove('show');
+}
+
+function closeModal(type) {
+  const el = document.getElementById(type + '-modal-overlay');
+  if (el) el.classList.add('hidden');
+}
+
+function closeModalOnOverlay(event, type) {
+  if (event.target === event.currentTarget) closeModal(type);
+}
+
+function switchModal(from, to) {
+  closeModal(from);
+  openModal(to);
+}
+
+function doRegister() {
+  const name = document.getElementById('reg-name').value.trim();
+  const prn = document.getElementById('reg-prn').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const dept = document.getElementById('reg-dept').value;
+  const password = document.getElementById('reg-password').value;
+  const confirm = document.getElementById('reg-confirm').value;
+  const errEl = document.getElementById('register-error');
+
+  if (!name || !prn || !email || !dept || !password) {
+    errEl.textContent = 'Please fill in all fields.';
+    errEl.classList.add('show'); return;
+  }
+  if (password !== confirm) {
+    errEl.textContent = 'Passwords do not match.';
+    errEl.classList.add('show'); return;
+  }
+  if (password.length < 6) {
+    errEl.textContent = 'Password must be at least 6 characters.';
+    errEl.classList.add('show'); return;
+  }
+
+  const users = getUsers();
+  if (users.find(u => u.prn === prn)) {
+    errEl.textContent = 'PRN already registered. Try logging in.';
+    errEl.classList.add('show'); return;
+  }
+
+  const newUser = { name, prn, email, dept, password, credits: 0, history: [] };
+  users.push(newUser);
+  saveUsers(users);
+
+  localStorage.setItem('ecobin_current', prn);
+  closeModal('register');
+  updateNavForUser(newUser);
+  showPage('dashboard');
+  addNotification(`Welcome, ${name}! Start recycling to earn your first credits.`);
+}
+
+function doLogin() {
+  const prn = document.getElementById('login-prn').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+
+  const users = getUsers();
+  const user = users.find(u => u.prn === prn && u.password === password);
+
+  if (!user) {
+    errEl.classList.add('show'); return;
+  }
+
+  localStorage.setItem('ecobin_current', prn);
+  closeModal('login');
+  updateNavForUser(user);
+  showPage('dashboard');
+}
+
+function logout() {
+  localStorage.removeItem('ecobin_current');
+  document.getElementById('auth-buttons').style.display = 'flex';
+  document.getElementById('user-menu').style.display = 'none';
+  showPage('landing');
+}
+
+function updateNavForUser(user) {
+  document.getElementById('auth-buttons').style.display = 'none';
+  document.getElementById('user-menu').style.display = 'flex';
+  const initials = user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  document.getElementById('nav-avatar').textContent = initials;
+}
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+function navigateDash(view) {
+  document.querySelectorAll('.dash-view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  const navEl = document.getElementById('nav-' + view);
+  if (navEl) navEl.classList.add('active');
+  // Close sidebar on mobile
+  if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
+
+  if (view === 'analytics') setTimeout(renderAnalyticsCharts, 100);
+  if (view === 'achievements') renderAchievements();
+  if (view === 'redeem') renderRedeem();
+  if (view === 'impact') renderEcoImpact();
+  if (view === 'profile') renderProfile();
+  if (view === 'history') renderHistory();
+}
+
+function refreshDashboard() {
+  const user = getCurrentUser();
+  if (!user) { showPage('landing'); return; }
+
+  updateNavForUser(user);
+
+  // Welcome message
+  document.getElementById('dash-welcome-name').textContent = user.name.split(' ')[0];
+  document.getElementById('dash-subtitle').textContent = new Date().toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  // Stats
+  const items = user.history.length;
+  const kg = (user.credits * 0.15).toFixed(1);
+
+  // Animate credit counter
+  const statEl = document.getElementById('stat-credits');
+  animateCounter(statEl, user.credits, 1000);
+  document.getElementById('stat-items').textContent = items;
+  document.getElementById('stat-kg').textContent = kg;
+
+  // Rank
+  const users = getUsers().sort((a, b) => b.credits - a.credits);
+  const rank = users.findIndex(u => u.prn === user.prn) + 1;
+  document.getElementById('stat-rank').textContent = '#' + rank;
+
+  // Sidebar credits
+  const scEl = document.getElementById('sidebar-credits-val');
+  animateCounter(scEl, user.credits, 800);
+
+  // Level
+  updateLevel(user.credits);
+
+  // Recent activity
+  renderRecentActivity(user);
+
+  // Trend chart
+  setTimeout(() => renderTrendChart(user), 200);
+
+  // Mobile sidebar button
+  if (window.innerWidth <= 768) {
+    document.getElementById('sidebar-toggle-btn').style.display = 'inline-flex';
+  }
+}
+
+function updateLevel(credits) {
+  const levels = [
+    { name: 'Novice', min: 0, max: 100, level: 1 },
+    { name: 'Eco Starter', min: 100, max: 250, level: 2 },
+    { name: 'Green Warrior', min: 250, max: 500, level: 3 },
+    { name: 'Recycler Pro', min: 500, max: 1000, level: 4 },
+    { name: 'Eco Champion', min: 1000, max: 2000, level: 5 },
+    { name: 'Planet Guardian', min: 2000, max: Infinity, level: 6 }
+  ];
+  const current = levels.find(l => credits >= l.min && credits < l.max) || levels[levels.length - 1];
+  const next = levels[current.level] || null;
+
+  document.getElementById('level-name').textContent = current.name;
+  document.getElementById('level-badge').textContent = 'Level ' + current.level;
+
+  const pct = next ? Math.min(100, ((credits - current.min) / (next.min - current.min)) * 100) : 100;
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-note').textContent = next
+    ? `${Math.max(0, next.min - credits)} credits to Level ${current.level + 1} — ${next.name}`
+    : '🏆 Maximum level reached!';
+}
+
+function renderRecentActivity(user) {
+  const container = document.getElementById('recent-activity');
+  const items = (user.history || []).slice(0, 5);
+  if (!items.length) {
+    container.innerHTML = `<div class="empty-state"><i class="fas fa-recycle"></i>No recycling activity yet.<br>Click "Simulate Arduino Signal" to get started!</div>`;
+    return;
+  }
+  container.innerHTML = items.map(item => `
+    <div class="activity-item">
+      <div class="ai-icon-wrap">${item.icon || '♻️'}</div>
+      <div class="ai-info">
+        <div class="ai-type">${item.type}</div>
+        <div class="ai-time">${item.date} at ${item.time}</div>
+      </div>
+      <div class="ai-credits">+${item.credits}</div>
+    </div>
+  `).join('');
+}
+
+function renderHistory() {
+  const user = getCurrentUser();
+  if (!user) return;
+  const container = document.getElementById('full-history');
+  const all = user.history || [];
+  const search = document.getElementById('history-search').value.toLowerCase();
+  const filtered = search ? all.filter(i => i.type.toLowerCase().includes(search)) : all;
+  document.getElementById('history-count').textContent = filtered.length + ' records';
+  if (!filtered.length) {
+    container.innerHTML = `<div class="empty-state"><i class="fas fa-search"></i>No matching records</div>`;
+    return;
+  }
+  container.innerHTML = filtered.map(item => `
+    <div class="activity-item">
+      <div class="ai-icon-wrap" style="font-size:1.2rem;">${item.icon || '♻️'}</div>
+      <div class="ai-info">
+        <div class="ai-type">${item.type}</div>
+        <div class="ai-time">${item.date} at ${item.time}</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="ai-credits">+${item.credits} pts</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterHistory() { renderHistory(); }
+
+/* ============================================================
+   ARDUINO SIMULATION
+   ============================================================ */
+const WASTE_TYPES = [
+  { type: 'Battery', icon: '🔋', creditRange: [8, 20] },
+  { type: 'Mobile Phone', icon: '📱', creditRange: [15, 30] },
+  { type: 'Charger', icon: '🔌', creditRange: [5, 15] },
+  { type: 'Earphones', icon: '🎧', creditRange: [5, 12] },
+  { type: 'Laptop Parts', icon: '💻', creditRange: [20, 30] },
+  { type: 'USB Cable', icon: '🔗', creditRange: [5, 10] }
+];
+
+function simulateArduino() {
+  const user = getCurrentUser();
+  if (!user) { alert('Please login first!'); return; }
+
+  // Pick random waste
+  const waste = WASTE_TYPES[Math.floor(Math.random() * WASTE_TYPES.length)];
+  const credits = Math.floor(Math.random() * (waste.creditRange[1] - waste.creditRange[0] + 1)) + waste.creditRange[0];
+  const now = new Date();
+  const entry = {
+    id: Date.now(),
+    type: waste.type,
+    icon: waste.icon,
+    credits,
+    date: now.toLocaleDateString('en-IN'),
+    time: now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+    timestamp: now.getTime()
+  };
+
+  // Update user
+  const users = getUsers();
+  const idx = users.findIndex(u => u.prn === user.prn);
+  if (idx === -1) return;
+  users[idx].credits += credits;
+  users[idx].history.unshift(entry);
+  if (users[idx].history.length > 100) users[idx].history.pop();
+  saveUsers(users);
+
+  // Add to global activity
+  addActivity({ prn: user.prn, name: user.name, ...entry });
+
+  // Show popup
+  showSuccessPopup(waste, credits);
+
+  // Add notification
+  addNotification(`+${credits} credits for recycling ${waste.type} ${waste.icon}`);
+
+  // Refresh
+  refreshDashboard();
+}
+
+function showSuccessPopup(waste, credits) {
+  const popup = document.getElementById('success-popup');
+  document.getElementById('popup-waste-type').textContent = waste.icon + ' ' + waste.type + ' detected & processed';
+  document.getElementById('popup-credits').textContent = '+' + credits + ' Credits';
+  popup.style.display = 'block';
+  setTimeout(() => { popup.style.display = 'none'; }, 4000);
+}
+
+/* ============================================================
+   CHARTS
+   ============================================================ */
+const CHART_DEFAULTS = {
+  color: '#00ff78',
+  grid: 'rgba(0,255,120,0.06)',
+  font: 'Syne',
+  textColor: '#7ab896'
+};
+
+function getComputedVar(varName) {
+  return getComputedStyle(document.body).getPropertyValue(varName).trim();
+}
+
+function renderTrendChart(user) {
+  const canvas = document.getElementById('trend-chart');
+  if (!canvas) return;
+  if (charts['trend']) { charts['trend'].destroy(); }
+
+  const days = [];
+  const credits = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push(d.toLocaleDateString('en-IN', { weekday: 'short' }));
+    const dayCredits = (user.history || []).filter(h => {
+      const hd = new Date(h.timestamp);
+      return hd.toDateString() === d.toDateString();
+    }).reduce((sum, h) => sum + h.credits, 0);
+    credits.push(dayCredits);
+  }
+
+  charts['trend'] = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: days,
+      datasets: [{
+        label: 'Credits',
+        data: credits,
+        borderColor: '#00ff78',
+        backgroundColor: 'rgba(0,255,120,0.08)',
+        pointBackgroundColor: '#00ff78',
+        pointBorderColor: '#00ff78',
+        tension: 0.4,
+        fill: true,
+        pointRadius: 5
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: CHART_DEFAULTS.grid }, ticks: { color: CHART_DEFAULTS.textColor, font: { family: CHART_DEFAULTS.font } } },
+        y: { grid: { color: CHART_DEFAULTS.grid }, ticks: { color: CHART_DEFAULTS.textColor, font: { family: CHART_DEFAULTS.font } }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+function renderAnalyticsCharts() {
+  const user = getCurrentUser();
+  if (!user) return;
+
+  // Donut: waste type distribution
+  const donutCanvas = document.getElementById('donut-chart');
+  if (donutCanvas) {
+    if (charts['donut']) charts['donut'].destroy();
+    const typeCounts = {};
+    (user.history || []).forEach(h => { typeCounts[h.type] = (typeCounts[h.type] || 0) + 1; });
+    const labels = Object.keys(typeCounts);
+    const data = Object.values(typeCounts);
+    charts['donut'] = new Chart(donutCanvas, {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{ data, backgroundColor: ['#00ff78','#00ffe7','#d4ff00','#ffd700','#ff6b6b','#a78bfa'], borderWidth: 0 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: CHART_DEFAULTS.textColor, font: { family: CHART_DEFAULTS.font }, padding: 12 } }
+        }
+      }
+    });
+  }
+
+  // Bar: credits per waste type
+  const barCanvas = document.getElementById('bar-chart');
+  if (barCanvas) {
+    if (charts['bar']) charts['bar'].destroy();
+    const typeCredits = {};
+    (user.history || []).forEach(h => { typeCredits[h.type] = (typeCredits[h.type] || 0) + h.credits; });
+    charts['bar'] = new Chart(barCanvas, {
+      type: 'bar',
+      data: {
+        labels: Object.keys(typeCredits),
+        datasets: [{ label: 'Credits', data: Object.values(typeCredits), backgroundColor: 'rgba(0,255,120,0.3)', borderColor: '#00ff78', borderWidth: 1 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: CHART_DEFAULTS.grid }, ticks: { color: CHART_DEFAULTS.textColor, font: { family: CHART_DEFAULTS.font, size: 10 } } },
+          y: { grid: { color: CHART_DEFAULTS.grid }, ticks: { color: CHART_DEFAULTS.textColor, font: { family: CHART_DEFAULTS.font } }, beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  // Line: cumulative credits
+  const creditsCanvas = document.getElementById('credits-chart');
+  if (creditsCanvas) {
+    if (charts['credits']) charts['credits'].destroy();
+    const sorted = [...(user.history || [])].sort((a, b) => a.timestamp - b.timestamp);
+    let cumulative = 0;
+    const labels = sorted.map(h => h.date);
+    const data = sorted.map(h => { cumulative += h.credits; return cumulative; });
+    charts['credits'] = new Chart(creditsCanvas, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{ label: 'Total Credits', data, borderColor: '#00ffe7', backgroundColor: 'rgba(0,255,231,0.06)', tension: 0.4, fill: true }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: CHART_DEFAULTS.grid }, ticks: { color: CHART_DEFAULTS.textColor, font: { family: CHART_DEFAULTS.font, size: 9 }, maxTicksLimit: 8 } },
+          y: { grid: { color: CHART_DEFAULTS.grid }, ticks: { color: CHART_DEFAULTS.textColor, font: { family: CHART_DEFAULTS.font } }, beginAtZero: true }
+        }
+      }
+    });
+  }
+}
+
+/* ============================================================
+   ACHIEVEMENTS
+   ============================================================ */
+const ACHIEVEMENTS_DEF = [
+  { id: 'first', name: 'First Drop', desc: 'Recycled your first item', icon: '🌱', req: items => items >= 1 },
+  { id: 'five', name: 'Five Star', desc: 'Recycled 5 items', icon: '⭐', req: items => items >= 5 },
+  { id: 'ten', name: 'Eco Starter', desc: 'Recycled 10 items', icon: '♻️', req: items => items >= 10 },
+  { id: 'twenty', name: 'Green Warrior', desc: 'Recycled 20 items', icon: '🌿', req: items => items >= 20 },
+  { id: 'fifty', name: 'Planet Hero', desc: 'Recycled 50 items', icon: '🌍', req: items => items >= 50 },
+  { id: 'credits100', name: 'Century Club', desc: 'Earned 100 credits', icon: '💯', req: (i, c) => c >= 100 },
+  { id: 'credits500', name: 'Credit King', desc: 'Earned 500 credits', icon: '👑', req: (i, c) => c >= 500 },
+  { id: 'battery', name: 'Battery Buster', desc: 'Recycled 3 batteries', icon: '🔋', req: (i, c, h) => h.filter(x=>x.type==='Battery').length >= 3 },
+  { id: 'phone', name: 'Phone Recycler', desc: 'Recycled 2 phones', icon: '📱', req: (i, c, h) => h.filter(x=>x.type==='Mobile Phone').length >= 2 },
+];
+
+function renderAchievements() {
+  const user = getCurrentUser();
+  if (!user) return;
+  const grid = document.getElementById('achievements-grid');
+  const items = user.history.length;
+  grid.innerHTML = ACHIEVEMENTS_DEF.map(ach => {
+    const unlocked = ach.req(items, user.credits, user.history);
+    return `
+      <div class="achievement-card glass-card ${unlocked ? '' : 'locked'}">
+        <span class="ach-icon">${ach.icon}</span>
+        <div class="ach-name">${ach.name}</div>
+        <div class="ach-desc">${ach.desc}</div>
+        ${unlocked ? '<div style="margin-top:6px;"><span class="badge badge-green" style="font-size:0.65rem;">UNLOCKED</span></div>' : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+/* ============================================================
+   REDEEM
+   ============================================================ */
+const REWARDS = [
+  { id: 'canteen', icon: '🍕', title: 'Canteen Coupon', brand: 'College Canteen', cost: 50, desc: 'Get ₹20 off on your next canteen purchase.' },
+  { id: 'coffee', icon: '☕', title: 'Free Coffee', brand: 'Cafe Corner', cost: 75, desc: 'Claim one free cup of coffee or tea.' },
+  { id: 'print', icon: '🖨️', title: 'Free Prints', brand: 'Library', cost: 30, desc: '10 free A4 prints from the college library.' },
+  { id: 'book', icon: '📚', title: 'Book Rental', brand: 'College Library', cost: 40, desc: 'One week free book rental from the library.' },
+  { id: 'movie', icon: '🎬', title: 'Movie Ticket', brand: 'Campus Cinema', cost: 150, desc: '50% off on one movie screening ticket.' },
+  { id: 'tshirt', icon: '👕', title: 'Eco T-Shirt', brand: 'EcoBin Store', cost: 200, desc: 'Limited edition EcoBin printed t-shirt.' },
+];
+
+function renderRedeem() {
+  const user = getCurrentUser();
+  if (!user) return;
+  document.getElementById('redeem-balance').textContent = user.credits;
+  const grid = document.getElementById('redeem-grid');
+  grid.innerHTML = REWARDS.map(r => {
+    const canAfford = user.credits >= r.cost;
+    return `
+      <div class="reward-card glass-card">
+        <div class="reward-card-header">
+          <span class="reward-icon">${r.icon}</span>
+          <div>
+            <div class="reward-title">${r.title}</div>
+            <div class="reward-brand">${r.brand}</div>
+          </div>
+        </div>
+        <div class="reward-cost">
+          <div class="reward-cost-value">${r.cost}</div>
+          <div class="reward-cost-label">credits</div>
+        </div>
+        <div class="reward-desc">${r.desc}</div>
+        <button class="btn ${canAfford ? 'btn-primary' : 'btn-outline'} btn-sm" 
+                onclick="redeemReward('${r.id}','${r.title}',${r.cost})"
+                ${canAfford ? '' : 'disabled style="opacity:0.5;cursor:not-allowed;"'}>
+          ${canAfford ? '<i class="fas fa-gift"></i> Redeem' : '<i class="fas fa-lock"></i> Not Enough Credits'}
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+function redeemReward(id, title, cost) {
+  const user = getCurrentUser();
+  if (!user || user.credits < cost) return;
+  const users = getUsers();
+  const idx = users.findIndex(u => u.prn === user.prn);
+  users[idx].credits -= cost;
+  saveUsers(users);
+  refreshDashboard();
+  renderRedeem();
+
+  const code = 'ECOBIN-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+  document.getElementById('redeem-success-msg').textContent = `You redeemed: ${title}`;
+  document.getElementById('coupon-code').textContent = code;
+  openModal('redeem-success');
+}
+
+/* ============================================================
+   ECO IMPACT
+   ============================================================ */
+function renderEcoImpact() {
+  const user = getCurrentUser();
+  if (!user) return;
+  const items = user.history.length;
+  const credits = user.credits;
+  const kgSaved = (credits * 0.15).toFixed(2);
+  const co2 = (credits * 0.08).toFixed(2);
+  const trees = (credits * 0.005).toFixed(1);
+  const water = (credits * 2.3).toFixed(1);
+
+  const grid = document.getElementById('eco-impact-grid');
+  grid.innerHTML = `
+    <div class="eco-card glass-card">
+      <div class="eco-icon">⚖️</div>
+      <div class="eco-value">${kgSaved} kg</div>
+      <div class="eco-label">Toxic Waste Diverted from Landfill</div>
+    </div>
+    <div class="eco-card glass-card">
+      <div class="eco-icon">🌫️</div>
+      <div class="eco-value">${co2} kg</div>
+      <div class="eco-label">CO₂ Emissions Prevented</div>
+    </div>
+    <div class="eco-card glass-card">
+      <div class="eco-icon">🌳</div>
+      <div class="eco-value">${trees}</div>
+      <div class="eco-label">Equivalent Trees Planted</div>
+    </div>
+    <div class="eco-card glass-card">
+      <div class="eco-icon">💧</div>
+      <div class="eco-value">${water} L</div>
+      <div class="eco-label">Water Contamination Prevented</div>
+    </div>
+    <div class="eco-card glass-card">
+      <div class="eco-icon">🔋</div>
+      <div class="eco-value">${items}</div>
+      <div class="eco-label">E-Waste Items Safely Recycled</div>
+    </div>
+    <div class="eco-card glass-card">
+      <div class="eco-icon">⚡</div>
+      <div class="eco-value">${(credits * 0.4).toFixed(0)} Wh</div>
+      <div class="eco-label">Energy Recovered from Materials</div>
+    </div>
+  `;
+}
+
+/* ============================================================
+   PROFILE
+   ============================================================ */
+function renderProfile() {
+  const user = getCurrentUser();
+  if (!user) return;
+  const initials = user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  document.getElementById('profile-avatar-text').textContent = initials;
+  document.getElementById('profile-name-disp').textContent = user.name;
+  document.getElementById('profile-prn-disp').textContent = 'PRN: ' + user.prn;
+  document.getElementById('profile-dept-disp').textContent = '🎓 ' + user.dept;
+  document.getElementById('profile-email-disp').textContent = '✉️ ' + user.email;
+  document.getElementById('edit-name').value = user.name;
+  document.getElementById('edit-email').value = user.email;
+  document.getElementById('edit-dept').value = user.dept;
+
+  const items = user.history.length;
+  const ach = ACHIEVEMENTS_DEF.filter(a => a.req(items, user.credits, user.history));
+  const badgeContainer = document.getElementById('profile-badges');
+  badgeContainer.innerHTML = ach.slice(0, 4).map(a => `<span title="${a.name}" style="font-size:1.4rem;">${a.icon}</span>`).join('');
+}
+
+function saveProfile() {
+  const user = getCurrentUser();
+  if (!user) return;
+  const name = document.getElementById('edit-name').value.trim();
+  const email = document.getElementById('edit-email').value.trim();
+  const dept = document.getElementById('edit-dept').value.trim();
+  if (!name || !email) return;
+
+  const users = getUsers();
+  const idx = users.findIndex(u => u.prn === user.prn);
+  users[idx].name = name;
+  users[idx].email = email;
+  users[idx].dept = dept;
+  saveUsers(users);
+  renderProfile();
+  addNotification('Profile updated successfully!');
+}
+
+/* ============================================================
+   LEADERBOARD
+   ============================================================ */
+function renderLeaderboard() {
+  const users = getUsers().sort((a, b) => b.credits - a.credits);
+  const currentPRN = localStorage.getItem('ecobin_current');
+  const top3 = users.slice(0, 3);
+  const rest = users.slice(3);
+
+  // Podium
+  const podium = document.getElementById('podium-section');
+  if (top3.length >= 3) {
+    const initials = u => u.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    podium.innerHTML = `
+      <div class="podium-item second">
+        <div class="podium-avatar" data-rank="🥈">${initials(top3[1])}</div>
+        <div class="podium-name">${top3[1].name.split(' ')[0]}</div>
+        <div class="podium-score">${top3[1].credits} pts</div>
+        <div class="podium-pedestal">2nd</div>
+      </div>
+      <div class="podium-item first">
+        <div class="podium-avatar" data-rank="🥇">${initials(top3[0])}</div>
+        <div class="podium-name">${top3[0].name.split(' ')[0]}</div>
+        <div class="podium-score">${top3[0].credits} pts</div>
+        <div class="podium-pedestal">1st Place</div>
+      </div>
+      <div class="podium-item third">
+        <div class="podium-avatar" data-rank="🥉">${initials(top3[2])}</div>
+        <div class="podium-name">${top3[2].name.split(' ')[0]}</div>
+        <div class="podium-score">${top3[2].credits} pts</div>
+        <div class="podium-pedestal">3rd</div>
+      </div>
+    `;
+  }
+
+  // Full table
+  const table = document.getElementById('leaderboard-table');
+  table.innerHTML = users.map((user, idx) => {
+    const rankClass = idx === 0 ? 'top1' : idx === 1 ? 'top2' : idx === 2 ? 'top3' : '';
+    const rankEmoji = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (idx + 1);
+    const initials = user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    const isCurrentUser = user.prn === currentPRN;
+    return `
+      <div class="lb-row ${isCurrentUser ? 'current-user' : ''}">
+        <div class="lb-rank ${rankClass}">${rankEmoji}</div>
+        <div class="lb-avatar">${initials}</div>
+        <div class="lb-info">
+          <div class="lb-name">${user.name} ${isCurrentUser ? '<span class="badge badge-green" style="font-size:0.65rem;">YOU</span>' : ''}</div>
+          <div class="lb-prn">PRN: ${user.prn} · ${user.dept}</div>
+        </div>
+        <div>
+          <div class="lb-credits">${user.credits} pts</div>
+          <div class="lb-items">${user.history.length} items</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ============================================================
+   ADMIN PANEL
+   ============================================================ */
+function openAdminLogin() {
+  showPage('admin');
+  document.getElementById('admin-login-wrap').style.display = 'flex';
+  document.getElementById('admin-dashboard-wrap').style.display = 'none';
+}
+
+function adminLogin() {
+  const u = document.getElementById('admin-user-input').value;
+  const p = document.getElementById('admin-pass-input').value;
+  const errEl = document.getElementById('admin-login-error');
+  if (u === 'admin' && p === 'admin123') {
+    document.getElementById('admin-login-wrap').style.display = 'none';
+    document.getElementById('admin-dashboard-wrap').style.display = 'block';
+    renderAdminPanel();
+  } else {
+    errEl.classList.add('show');
+  }
+}
+
+function renderAdminPrep() {}
+
+function renderAdminPanel() {
+  const users = getUsers();
+  const totalCredits = users.reduce((s, u) => s + u.credits, 0);
+  const totalItems = users.reduce((s, u) => s + u.history.length, 0);
+
+  // Stats
+  document.getElementById('admin-stats-grid').innerHTML = `
+    <div class="admin-stat"><div class="admin-stat-value">${users.length}</div><div class="admin-stat-label">Total Users</div></div>
+    <div class="admin-stat"><div class="admin-stat-value">${totalCredits}</div><div class="admin-stat-label">Credits Issued</div></div>
+    <div class="admin-stat"><div class="admin-stat-value">${totalItems}</div><div class="admin-stat-label">Items Recycled</div></div>
+    <div class="admin-stat"><div class="admin-stat-value">${(totalCredits * 0.15).toFixed(1)}kg</div><div class="admin-stat-label">Waste Saved</div></div>
+  `;
+
+  // Users table
+  const tbody = document.getElementById('admin-users-tbody');
+  tbody.innerHTML = users.map((user, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${user.name}</td>
+      <td><code style="color:var(--neon-green);font-size:0.78rem;">${user.prn}</code></td>
+      <td>${user.email}</td>
+      <td>${user.dept}</td>
+      <td style="color:var(--neon-green);font-family:Orbitron,monospace;">${user.credits}</td>
+      <td>${user.history.length}</td>
+      <td><button class="btn btn-sm btn-outline" onclick="adminAddCredit('${user.prn}')">+ Credits</button></td>
+    </tr>
+  `).join('');
+
+  // Trigger user select
+  const select = document.getElementById('admin-trigger-user');
+  select.innerHTML = users.map(u => `<option value="${u.prn}">${u.name} (${u.prn})</option>`).join('');
+
+  // Activity feed
+  const feed = getActivity().slice(0, 20);
+  const feedEl = document.getElementById('admin-activity-feed');
+  feedEl.innerHTML = feed.length ? feed.map(a => `
+    <div class="activity-feed-item">
+      <div class="afi-dot"></div>
+      <span>${a.name} recycled ${a.type} ${a.icon} — +${a.credits} pts @ ${a.time}</span>
+    </div>
+  `).join('') : '<div style="color:var(--text-muted);font-size:0.82rem;padding:1rem;">No activity yet</div>';
+}
+
+function adminAddCredit(prn) {
+  const credits = parseInt(prompt('Credits to add:', '15')) || 0;
+  if (credits <= 0) return;
+  const users = getUsers();
+  const idx = users.findIndex(u => u.prn === prn);
+  if (idx !== -1) {
+    users[idx].credits += credits;
+    saveUsers(users);
+    renderAdminPanel();
+    alert(`Added ${credits} credits to ${users[idx].name}`);
+  }
+}
+
+function adminTriggerCredit() {
+  const prn = document.getElementById('admin-trigger-user').value;
+  const credits = parseInt(document.getElementById('admin-trigger-credits').value) || 0;
+  if (!prn || credits <= 0) return;
+  const users = getUsers();
+  const idx = users.findIndex(u => u.prn === prn);
+  if (idx !== -1) {
+    const waste = WASTE_TYPES[Math.floor(Math.random() * WASTE_TYPES.length)];
+    const now = new Date();
+    users[idx].credits += credits;
+    users[idx].history.unshift({
+      id: Date.now(), type: waste.type, icon: waste.icon, credits,
+      date: now.toLocaleDateString('en-IN'),
+      time: now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+      timestamp: now.getTime()
+    });
+    saveUsers(users);
+    addActivity({ prn, name: users[idx].name, ...{ type: waste.type, icon: waste.icon, credits, time: now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) } });
+    renderAdminPanel();
+    alert(`✅ Added ${credits} credits to ${users[idx].name}`);
+  }
+}
+
+function resetDatabase() {
+  if (confirm('⚠️ This will delete ALL user data and reset to demo state. Are you sure?')) {
+    localStorage.removeItem('ecobin_users');
+    localStorage.removeItem('ecobin_activity');
+    localStorage.removeItem('ecobin_notifications');
+    localStorage.removeItem('ecobin_current');
+    initDB();
+    renderAdminPanel();
+    alert('Database reset to demo state!');
+  }
+}
+
+/* ============================================================
+   NOTIFICATIONS
+   ============================================================ */
+function addNotification(text) {
+  const notifs = JSON.parse(localStorage.getItem('ecobin_notifications') || '[]');
+  notifs.unshift({ id: Date.now(), text, time: 'Just now' });
+  if (notifs.length > 20) notifs.pop();
+  localStorage.setItem('ecobin_notifications', JSON.stringify(notifs));
+  document.getElementById('notif-dot').style.display = 'block';
+  renderNotifications();
+}
+
+function renderNotifications() {
+  const notifs = JSON.parse(localStorage.getItem('ecobin_notifications') || '[]');
+  const list = document.getElementById('notif-list');
+  list.innerHTML = notifs.slice(0, 8).map(n => `
+    <div class="notif-item">
+      <i class="fas fa-recycle ni-icon"></i>
+      <div>
+        <div style="font-size:0.82rem;color:var(--text-primary);">${n.text}</div>
+        <div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px;">${n.time}</div>
+      </div>
+    </div>
+  `).join('') || '<div style="color:var(--text-muted);font-size:0.82rem;">No notifications</div>';
+}
+
+function toggleNotifications() {
+  const panel = document.getElementById('notif-panel');
+  notificationsOpen = !notificationsOpen;
+  panel.classList.toggle('open', notificationsOpen);
+  if (notificationsOpen) {
+    renderNotifications();
+    document.getElementById('notif-dot').style.display = 'none';
+  }
+}
+
+document.addEventListener('click', e => {
+  const panel = document.getElementById('notif-panel');
+  const btn = document.getElementById('notification-btn');
+  if (!panel.contains(e.target) && !btn.contains(e.target)) {
+    panel.classList.remove('open');
+    notificationsOpen = false;
+  }
+});
+
+/* ============================================================
+   THEME TOGGLE
+   ============================================================ */
+function toggleTheme() {
+  document.body.classList.toggle('light-mode');
+  const icon = document.getElementById('theme-icon');
+  icon.className = document.body.classList.contains('light-mode') ? 'fas fa-sun' : 'fas fa-moon';
+  localStorage.setItem('ecobin_theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+}
+
+function loadTheme() {
+  if (localStorage.getItem('ecobin_theme') === 'light') {
+    document.body.classList.add('light-mode');
+    document.getElementById('theme-icon').className = 'fas fa-sun';
+  }
+}
+
+/* ============================================================
+   MOBILE NAV
+   ============================================================ */
+function toggleMobileNav() {
+  document.getElementById('mobile-nav').classList.toggle('open');
+}
+function closeMobileNav() {
+  document.getElementById('mobile-nav').classList.remove('open');
+}
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+/* ============================================================
+   QR CODE SIMULATION
+   ============================================================ */
+function showQrModal() {
+  const user = getCurrentUser();
+  if (!user) return;
+  // Generate pseudo-random QR-like pattern
+  const pattern = document.getElementById('qr-pattern');
+  let html = '';
+  for (let i = 0; i < 100; i++) {
+    const hash = ((user.prn.charCodeAt(i % user.prn.length) * (i + 1) * 37 + i * 13) % 3);
+    html += `<div class="qr-cell ${hash === 0 ? 'w' : ''}"></div>`;
+  }
+  // Force corners to be black (QR positioning squares)
+  pattern.innerHTML = html;
+  document.getElementById('qr-prn-label').textContent = 'PRN: ' + user.prn;
+  openModal('qr');
+}
+
+/* ============================================================
+   CERTIFICATE
+   ============================================================ */
+function showCertModal() {
+  const user = getCurrentUser();
+  if (!user) return;
+  const today = new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
+  document.getElementById('cert-preview').innerHTML = `
+    <div id="cert-preview">
+      <div class="cert-title">♻️ EcoBin</div>
+      <div class="cert-sub">CERTIFICATE OF RECYCLING ACHIEVEMENT</div>
+      <div style="font-size:0.9rem;color:var(--text-muted);margin-bottom:1rem;">This is to certify that</div>
+      <div class="cert-name">${user.name}</div>
+      <div class="cert-body">
+        <strong>PRN: ${user.prn}</strong> | ${user.dept}<br>
+        has successfully recycled <strong>${user.history.length} electronic waste items</strong>,<br>
+        earning a total of <strong>${user.credits} EcoBin Credits</strong>,<br>
+        contributing to a greener, cleaner planet.
+      </div>
+      <div class="cert-footer">
+        <span>📅 ${today}</span>
+        <span style="color:var(--neon-green);font-family:Orbitron,monospace;font-size:0.85rem;">ECOBIN PLATFORM</span>
+        <span>Verified ✓</span>
+      </div>
+    </div>
+  `;
+  openModal('cert');
+}
+
+function downloadCert() {
+  const user = getCurrentUser();
+  if (!user) return;
+  // Create a downloadable text certificate
+  const today = new Date().toLocaleDateString('en-IN');
+  const content = `
+ECOBIN — CERTIFICATE OF RECYCLING ACHIEVEMENT
+==============================================
+
+This is to certify that
+
+${user.name}
+PRN: ${user.prn} | ${user.dept}
+
+has successfully recycled ${user.history.length} electronic waste items,
+earning a total of ${user.credits} EcoBin Credits,
+contributing to a greener, cleaner planet.
+
+Date: ${today}
+EcoBin Smart Recycling Platform — Verified
+
+Impact Summary:
+- Toxic waste diverted: ${(user.credits * 0.15).toFixed(2)} kg
+- CO2 prevented: ${(user.credits * 0.08).toFixed(2)} kg
+- Items recycled: ${user.history.length}
+  `;
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `EcoBin_Certificate_${user.prn}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+window.addEventListener('DOMContentLoaded', () => {
+  initDB();
+  loadTheme();
+  initCounters();
+
+  // Check if user is already logged in
+  const savedPRN = localStorage.getItem('ecobin_current');
+  if (savedPRN) {
+    const user = getCurrentUser();
+    if (user) updateNavForUser(user);
+  }
+
+  // Mobile sidebar button visibility
+  function checkMobile() {
+    const btn = document.getElementById('sidebar-toggle-btn');
+    if (btn) btn.style.display = window.innerWidth <= 768 ? 'inline-flex' : 'none';
+  }
+  window.addEventListener('resize', checkMobile);
+  checkMobile();
+});
+</script>
+</body>
+</html>
